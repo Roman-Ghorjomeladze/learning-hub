@@ -1,0 +1,25 @@
+{
+  "title": "Production Kubernetes & Extending the API",
+  "summary": "What changes when you run Kubernetes for real: managed clusters and EKS specifics, upgrades and version skew, multi-tenancy, cost, backups, CRDs and operators, a production readiness checklist, and the CKAD/CKA/CKS certification path.",
+  "level": "advanced",
+  "estimatedMinutes": 240,
+  "objectives": [
+    "Explain what a managed control plane gives you and what you still own",
+    "Describe EKS building blocks: VPC CNI, node groups vs Fargate vs Karpenter vs Auto Mode, access entries, Pod Identity, AWS Load Balancer Controller",
+    "Plan a cluster upgrade respecting version skew, deprecated APIs and PodDisruptionBudgets",
+    "Design a namespace and multi-tenancy strategy with quotas, limits, RBAC, policies and network isolation",
+    "Name the main cost drivers of a cluster and how to reduce them",
+    "Explain what Velero backs up and why databases need their own backups",
+    "Write a CRD with schema validation and a minimal reconcile loop, and explain the operator pattern",
+    "Choose and prepare for CKAD, CKA or CKS"
+  ],
+  "resources": [
+    { "title": "Amazon EKS User Guide", "url": "https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html", "type": "docs", "note": "Clusters, compute options, networking, IAM, add-ons." },
+    { "title": "Version Skew Policy", "url": "https://kubernetes.io/releases/version-skew-policy/", "type": "spec", "note": "Which component versions may differ during upgrades." },
+    { "title": "Extend the Kubernetes API with CustomResourceDefinitions", "url": "https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/", "type": "docs", "note": "Schemas, versions, subresources, printer columns, CEL validation." },
+    { "title": "The Kubebuilder Book", "url": "https://book.kubebuilder.io/", "type": "book", "note": "Build a real operator in Go with controller-runtime." },
+    { "title": "Karpenter documentation", "url": "https://karpenter.sh/docs/", "type": "docs", "note": "Just-in-time node provisioning, NodePools, consolidation." },
+    { "title": "Velero documentation", "url": "https://velero.io/docs/", "type": "docs", "note": "Backup and restore of cluster resources and volumes." },
+    { "title": "Linux Foundation FAQ: CKA, CKAD & CKS", "url": "https://docs.linuxfoundation.org/tc-docs/certification/faq-cka-ckad-cks", "type": "docs", "note": "Exam format, duration, retakes, simulator, validity." }
+  ]
+}

@@ -1,0 +1,169 @@
+[
+  {
+    "type": "single",
+    "q": "What is the main benefit of a multi-stage build for a TypeScript service?",
+    "options": [
+      "It makes the build run on multiple machines",
+      "It automatically produces multi-platform images",
+      "It allows multiple CMD instructions",
+      "Compilers, devDependencies and sources stay in build stages; the runtime image gets only `dist/` and production `node_modules`"
+    ],
+    "answer": 3,
+    "explain": "Each `FROM` starts a fresh filesystem. The final stage copies only selected artefacts with `COPY --from`, so TypeScript, `@types/*` and build tools never reach production. Multi-platform is a separate buildx feature."
+  },
+  {
+    "type": "single",
+    "q": "A pod using your image fails with `container has runAsNonRoot and image has non-numeric user (node), cannot verify user is non-root`. What's the fix in the Dockerfile?",
+    "options": [
+      "Use a numeric UID, e.g. `USER 1000:1000`",
+      "Remove the `USER` instruction",
+      "Add `ENV USER=node`",
+      "Switch to `USER root` and drop capabilities"
+    ],
+    "answer": 0,
+    "explain": "The kubelet can't resolve user names inside the image, so it can only verify `runAsNonRoot` for numeric UIDs. Alternatively set `runAsUser: 1000` in the pod's securityContext — but a numeric `USER` in the image is the robust default."
+  },
+  {
+    "type": "multi",
+    "q": "You switch the runtime stage from `node:22-bookworm-slim` to `node:22-alpine` but keep copying `node_modules` from a Debian build stage. The app uses `bcrypt`. What goes wrong and how do you fix it? (select all)",
+    "options": [
+      "Alpine images can't run Node.js at all",
+      "Nothing — native modules are platform-independent",
+      "`bcrypt`'s native binary was built against glibc and fails to load on musl",
+      "Install dependencies in an Alpine-based stage so native modules are built/fetched for musl"
+    ],
+    "answer": [
+      2,
+      3
+    ],
+    "explain": "Native addons are compiled for a specific libc and CPU architecture. Match the dependency-install stage to the runtime's libc (and architecture). Pure-JS packages are portable; native ones are not."
+  },
+  {
+    "type": "single",
+    "q": "Which is the correct way to use a private npm token during a build?",
+    "options": [
+      "`RUN --mount=type=secret,id=npmrc,target=/root/.npmrc npm ci` with `docker build --secret id=npmrc,src=$HOME/.npmrc`",
+      "`COPY .npmrc .` then `RUN npm ci && rm .npmrc`",
+      "`ARG NPM_TOKEN` and write it to `.npmrc` in a `RUN`, deleting it at the end of the same `RUN`",
+      "`ENV NPM_TOKEN=...` in the build stage only"
+    ],
+    "answer": 0,
+    "explain": "Secret mounts exist only during the RUN and never enter layers, history or the cache key. ARG values used by RUN are recorded in history (and in max provenance); a COPY'd file stays in its layer; ENV is stored in the stage config."
+  },
+  {
+    "type": "single",
+    "q": "Your multi-platform CI build takes 25 minutes because `npm ci` and `tsc` run under QEMU for linux/amd64 on an arm64 runner. The app has no native addons. What's the most effective improvement?",
+    "options": [
+      "Build only for arm64",
+      "Use `FROM --platform=$BUILDPLATFORM` for the dependency and compile stages so they run natively, and copy the platform-independent output into each target's runtime stage",
+      "Add `--no-cache` to avoid stale layers",
+      "Switch the base image to Alpine"
+    ],
+    "answer": 1,
+    "explain": "JavaScript output and pure-JS dependencies are identical across platforms, so build them once natively (cross-compilation). Only the runtime stage needs the target platform. With native addons, keep the prod-deps stage on the target platform or use native builders."
+  },
+  {
+    "type": "single",
+    "q": "What does `docker buildx imagetools inspect` show for an image built with `--platform linux/amd64,linux/arm64 --sbom=true --provenance=mode=max`?",
+    "options": [
+      "A single manifest for the build machine's platform",
+      "Two separate tags, one per platform",
+      "An image index with amd64 and arm64 manifests plus attestation manifests with platform `unknown/unknown`",
+      "Only the SBOM document"
+    ],
+    "answer": 2,
+    "explain": "Multi-platform builds produce an index. Attestations (SBOM, provenance) are stored as additional manifests that reference the platform manifest they describe, shown as `unknown/unknown`."
+  },
+  {
+    "type": "single",
+    "q": "Your distroless-based image is permanently `unhealthy`. The Dockerfile has `HEALTHCHECK CMD curl -f http://localhost:3000/healthz || exit 1`. Why?",
+    "options": [
+      "The shell-form health check needs `/bin/sh`, and neither a shell nor curl exists in distroless; use exec form with `/nodejs/bin/node -e \"fetch(...)\"`",
+      "Distroless images don't support health checks",
+      "Port 3000 is blocked inside distroless",
+      "HEALTHCHECK only works in Kubernetes"
+    ],
+    "answer": 0,
+    "explain": "Shell-form HEALTHCHECK runs via `/bin/sh -c`, and curl isn't installed either. Use exec form with a binary that exists — Node 22's built-in `fetch` works. `docker inspect -f '{{json .State.Health}}'` shows the failing output."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about `HEALTHCHECK` are true? (select all)",
+    "options": [
+      "Its status is visible in `docker ps` and `docker inspect`",
+      "Kubernetes ignores it and uses liveness/readiness/startup probes instead",
+      "Plain `docker run` restarts a container automatically when it becomes unhealthy",
+      "Compose can use it with `depends_on: condition: service_healthy`"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "Docker only reports health for standalone containers; it doesn't restart unhealthy ones (Swarm services do replace them). Kubernetes has its own probe mechanism."
+  },
+  {
+    "type": "single",
+    "q": "Which tagging and deployment approach is most robust?",
+    "options": [
+      "Push `latest` on every build and deploy `latest`",
+      "Push `sha-<commit>` on every build, add `X.Y.Z`/`X.Y`/`X` on releases, make release tags immutable, and deploy by digest",
+      "Re-push `1.0.0` whenever a fix is ready so clients get it automatically",
+      "Use the build date as the only tag"
+    ],
+    "answer": 1,
+    "explain": "SHA tags trace images to commits, semver tags communicate releases, immutability prevents silent overwrites, and digests guarantee the deployed bytes. Rollback is redeploying the previous digest."
+  },
+  {
+    "type": "single",
+    "q": "Why put `ARG GIT_SHA` and the `LABEL org.opencontainers.image.revision=$GIT_SHA` at the end of the Dockerfile rather than the top?",
+    "options": [
+      "A value that changes every commit would invalidate the cache for every later instruction if placed early",
+      "Labels must be the last instruction",
+      "ARGs at the top are ignored",
+      "OCI labels at the top aren't exported to registries"
+    ],
+    "answer": 0,
+    "explain": "Instructions after a changed build arg (when used) miss the cache. Keeping per-build metadata at the end lets dependency and build layers stay cached."
+  },
+  {
+    "type": "single",
+    "q": "hadolint reports `DL3025` on your Dockerfile. What does it want you to change, and why does it matter?",
+    "options": [
+      "Pin apt package versions, for reproducibility",
+      "Use JSON (exec) form for CMD/ENTRYPOINT, so your process receives signals directly and no shell is required",
+      "Replace ADD with COPY, to avoid remote downloads",
+      "Add a HEALTHCHECK, so orchestrators can monitor the container"
+    ],
+    "answer": 1,
+    "explain": "Shell form wraps the command in `/bin/sh -c`, which can swallow SIGTERM and breaks in shell-less images. DL3008 is apt pinning and DL3020 is ADD vs COPY."
+  },
+  {
+    "type": "multi",
+    "q": "Which practices improve build reproducibility? (select all)",
+    "options": [
+      "`RUN curl -L https://example.com/tool/latest/tool.tgz | tar xz`",
+      "`ADD --checksum=sha256:... https://example.com/tool-1.2.3.tgz /tmp/`",
+      "`FROM node:22-bookworm-slim@sha256:...`",
+      "`npm ci` with a committed `package-lock.json`"
+    ],
+    "answer": [
+      1,
+      2,
+      3
+    ],
+    "explain": "Digests, lockfiles and checksummed downloads make inputs fixed. Downloading `latest` without verification changes silently between builds."
+  },
+  {
+    "type": "single",
+    "q": "A security reviewer asks: 'If the app is compromised, can the attacker modify the application code inside the container?' Your image copies files as root and runs `USER 1000:1000`. What's the answer?",
+    "options": [
+      "Yes, because the process owns its working directory",
+      "It depends on the base image's shell",
+      "Yes, because Docker always mounts the image read-write for the container user",
+      "No — files are root-owned and not writable by UID 1000; combined with `readOnlyRootFilesystem` in Kubernetes, the filesystem is fully immutable"
+    ],
+    "answer": 3,
+    "explain": "Ownership matters: `COPY` without `--chown` creates root-owned files that UID 1000 can read but not modify. Only explicitly created writable paths (or volumes, `/tmp`) are writable. `readOnlyRootFilesystem: true` adds another layer."
+  }
+]

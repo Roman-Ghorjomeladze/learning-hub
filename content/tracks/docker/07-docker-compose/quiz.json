@@ -1,0 +1,170 @@
+[
+  {
+    "type": "single",
+    "q": "Your API service has `depends_on: [db]` and still crashes on first `docker compose up` with `ECONNREFUSED 172.20.0.2:5432`, then works on a second `up`. What's the proper fix?",
+    "options": [
+      "Add `sleep 10 &&` before the API command",
+      "Publish Postgres on port 5432",
+      "Add `restart: always` to the API",
+      "Add a healthcheck to `db` (e.g. `pg_isready`) and use `depends_on: { db: { condition: service_healthy } }`"
+    ],
+    "answer": 3,
+    "explain": "Short-form `depends_on` only orders container **start**. Postgres needs a few seconds before accepting connections. A healthcheck plus `condition: service_healthy` waits for readiness. Your app should still retry connections, because dependencies can restart independently later."
+  },
+  {
+    "type": "single",
+    "q": "Your `.env` file contains `API_KEY=abc`. The compose file never mentions `API_KEY`. What is `process.env.API_KEY` inside the api container?",
+    "options": [
+      "`abc`, because Compose loads `.env` into every container",
+      "`undefined`: `.env` is only used for interpolation of `${...}` in the compose file",
+      "`abc`, but only in the first service",
+      "Compose fails to start because of an unused variable"
+    ],
+    "answer": 1,
+    "explain": "The project `.env` file feeds **interpolation**. Variables reach a container only via `environment:` or `env_file:` (or `run -e`)."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about variable handling in Compose are correct? (select all)",
+    "options": [
+      "`${DB_PASSWORD:?missing}` makes Compose fail at parse time if the variable is unset or empty",
+      "A shell variable overrides the same variable in `.env` for interpolation",
+      "`environment:` has lower precedence than `env_file:`",
+      "`$$` produces a literal `$` so the container's shell can expand the variable"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "`:?` enforces required values; shell beats `.env`; `$$` escapes interpolation (common in healthchecks). For container env, `environment` **beats** `env_file`, and `run -e` beats both."
+  },
+  {
+    "type": "single",
+    "q": "You need database migrations to run exactly once before the API starts, even when you later scale the API to 3 replicas. What's the best Compose pattern?",
+    "options": [
+      "Run migrations in the API's entrypoint",
+      "Use `profiles` to run migrations",
+      "Run migrations in a healthcheck",
+      "A separate `migrate` service with `restart: \"no\"`, and the API depending on it with `condition: service_completed_successfully`"
+    ],
+    "answer": 3,
+    "explain": "A one-off job service runs once and exits; the condition gates the API until it exits 0. Migrations in the entrypoint race when several replicas start at once."
+  },
+  {
+    "type": "single",
+    "q": "In `compose.override.yaml` you omit the `ports` key for `api`, hoping to remove the `3000:3000` mapping defined in `compose.yaml`. What happens?",
+    "options": [
+      "The base mapping stays; to remove it use `ports: !reset []` (or `!override` to replace the list)",
+      "Both files' ports are ignored",
+      "The port is removed",
+      "Compose errors because the files disagree"
+    ],
+    "answer": 0,
+    "explain": "Omitting a key in an override changes nothing. Lists like `ports` are combined when merging. `!reset` clears a value and `!override` replaces it entirely (Compose 2.24+)."
+  },
+  {
+    "type": "single",
+    "q": "Which `compose watch` action fits a change to `package.json` in a Node.js service?",
+    "options": [
+      "`sync`",
+      "`restart`",
+      "`rebuild`",
+      "`sync+restart`"
+    ],
+    "answer": 2,
+    "explain": "Dependencies are installed during the image build, so the image must be rebuilt and the container recreated. Source files use `sync` (with an in-container watcher like `node --watch`)."
+  },
+  {
+    "type": "multi",
+    "q": "Why is `docker compose watch` usually better than bind-mounting the whole project for Node development on a Mac? (select all)",
+    "options": [
+      "Dependency changes trigger a rebuild inside Linux, so native modules match the container architecture",
+      "It makes the image smaller in production",
+      "It doesn't hide the image's `node_modules`",
+      "The container reads files from its own filesystem instead of across the macOS-VM file-sharing layer"
+    ],
+    "answer": [
+      0,
+      2,
+      3
+    ],
+    "explain": "Watch syncs only changed files into the container and rebuilds on dependency changes. It has no effect on production image size; that's the Dockerfile's job."
+  },
+  {
+    "type": "single",
+    "q": "You run `docker compose up -d --scale api=3` and get `Bind for 0.0.0.0:3000 failed: port is already allocated`. Why?",
+    "options": [
+      "Each replica tries to publish the same fixed host port; only one container can bind it",
+      "You need Docker Swarm for scaling",
+      "Compose can't scale services that have healthchecks",
+      "Port 3000 is reserved by macOS"
+    ],
+    "answer": 0,
+    "explain": "Use a host port range, no host port at all, or a reverse proxy as the single published service. Replicas are reachable as `api` via DNS round-robin on the project network."
+  },
+  {
+    "type": "single",
+    "q": "A colleague ran `docker compose down -v` and lost their local Postgres data. Which change would have prevented that most reliably for a precious dataset?",
+    "options": [
+      "Use `restart: unless-stopped`",
+      "Use `docker compose stop` in the README",
+      "Declare the volume as `external: true` (created outside Compose), so Compose never removes it",
+      "Use a tmpfs mount"
+    ],
+    "answer": 2,
+    "explain": "`down -v` removes named volumes **declared and owned** by the project. External volumes are only referenced, never created or deleted by Compose."
+  },
+  {
+    "type": "single",
+    "q": "What's the purpose of `docker compose config`?",
+    "options": [
+      "Show running containers' configuration",
+      "Print the fully merged and interpolated model that Compose will apply (and validate it)",
+      "Create Compose `configs:` objects",
+      "Edit the Docker daemon configuration"
+    ],
+    "answer": 1,
+    "explain": "It merges all files, applies interpolation and defaults, and prints the result. `config -q` only validates, which is handy in CI."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about Compose secrets are true? (select all)",
+    "options": [
+      "Many official images support `*_FILE` variants such as `POSTGRES_PASSWORD_FILE`",
+      "They don't show up in `docker inspect` environment output",
+      "They are encrypted at rest when using plain Compose with `file:` secrets",
+      "They are mounted as files under `/run/secrets/<name>` by default"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "Secrets avoid environment variables and image layers. With plain Compose, a file secret is just bind-mounted from disk, not encrypted. Production should use a real secret store."
+  },
+  {
+    "type": "single",
+    "q": "A service has `profiles: [tools]`. Which command starts it along with the default services?",
+    "options": [
+      "`docker compose --profile tools up -d` (or `COMPOSE_PROFILES=tools`)",
+      "`docker compose run tools`",
+      "`docker compose up -d --all`",
+      "`docker compose up -d`"
+    ],
+    "answer": 0,
+    "explain": "Services with profiles start only when a matching profile is active (or when you target the service explicitly by name). Services without profiles always start."
+  },
+  {
+    "type": "single",
+    "q": "You edited a `.ts` file in the build context and ran `docker compose up -d`. Nothing changed in the running container. Why?",
+    "options": [
+      "You must run `docker compose restart`",
+      "Compose caches containers for 24 hours",
+      "`up` doesn't rebuild images unless you pass `--build` (or use `watch`); the service config hash didn't change",
+      "TypeScript files are ignored by BuildKit"
+    ],
+    "answer": 2,
+    "explain": "Compose recreates containers when the resolved service configuration (hash label) changes. Source file changes in the build context aren't part of that; rebuild with `up --build` or use `compose watch`."
+  }
+]

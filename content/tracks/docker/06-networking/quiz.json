@@ -1,0 +1,158 @@
+[
+  {
+    "type": "single",
+    "q": "Your API container uses `DATABASE_URL=postgres://shipit:pw@localhost:5432/shipit`. Postgres runs in another container with `-p 5432:5432`. The API gets `ECONNREFUSED`. Why?",
+    "options": [
+      "Port 5432 is blocked by Docker by default",
+      "Postgres needs `--network host` to accept connections",
+      "`localhost` inside the API container is the API container itself; it should use the Postgres container's name on a shared user-defined network",
+      "The published port should be 15432"
+    ],
+    "answer": 2,
+    "explain": "Each container has its own network namespace, so `localhost` is the container's own loopback. Put both on the same user-defined network and use `db:5432` (container name + container port). Published host ports don't matter for container-to-container traffic."
+  },
+  {
+    "type": "multi",
+    "q": "What does a user-defined bridge network give you that the default `bridge` network doesn't? (select all)",
+    "options": [
+      "Automatic DNS resolution of container names via the embedded DNS server",
+      "Isolation from containers that weren't explicitly attached",
+      "Higher throughput than host networking",
+      "Connecting and disconnecting running containers without restart"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "User-defined bridges provide embedded DNS (127.0.0.11), isolation, live connect/disconnect and per-network settings. They are not faster than host networking; they add a veth/bridge hop and NAT for published ports."
+  },
+  {
+    "type": "single",
+    "q": "Inside a container on a user-defined network, `/etc/resolv.conf` shows `nameserver 127.0.0.11`. What is that?",
+    "options": [
+      "A bug: DNS will fail because it points at loopback",
+      "Docker's embedded DNS server, which resolves container names, aliases and service names and forwards other queries upstream",
+      "The IP of the Docker bridge gateway",
+      "A CoreDNS sidecar container"
+    ],
+    "answer": 1,
+    "explain": "Docker intercepts 127.0.0.11 inside the container's namespace and answers from the daemon, which knows the containers and aliases on that network. Misses are forwarded to the host's resolvers."
+  },
+  {
+    "type": "single",
+    "q": "A container is running with `-p 3000:3000`, `docker ps` shows `0.0.0.0:3000->3000/tcp`, the logs say `listening on 127.0.0.1:3000`, but `curl localhost:3000` from your Mac returns connection refused/reset. What's the fix?",
+    "options": [
+      "Restart Docker Desktop",
+      "Use `-p 127.0.0.1:3000:3000`",
+      "Add `EXPOSE 3000` to the Dockerfile",
+      "Make the app listen on `0.0.0.0` inside the container"
+    ],
+    "answer": 3,
+    "explain": "The app listens on the container's own loopback. Forwarded traffic arrives on the container's `eth0` interface, where nothing is listening. Binding to `0.0.0.0` fixes it. `EXPOSE` is documentation only."
+  },
+  {
+    "type": "single",
+    "q": "On a Linux VM in the cloud, you run `ufw deny 5432` and then `docker run -p 5432:5432 postgres:18`. Is Postgres reachable from the internet (assuming the cloud security group allows it)?",
+    "options": [
+      "Only over IPv6",
+      "Only if the userland proxy is disabled",
+      "No, ufw blocks it",
+      "Yes: Docker's DNAT rules in the `nat` table divert the traffic before it reaches the chains ufw manages"
+    ],
+    "answer": 3,
+    "explain": "Published ports bypass ufw. Bind to `127.0.0.1`, don't publish internal services, or add rules in the `DOCKER-USER` chain. Cloud security groups sit outside the VM and still filter."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about `-p` / port publishing are true? (select all)",
+    "options": [
+      "`-p 80` publishes container port 80 on a random free host port",
+      "On Docker Desktop for Mac, a forwarder on macOS relays published ports into the Linux VM",
+      "`-p 127.0.0.1:8080:80` makes the port reachable only from the host itself",
+      "`EXPOSE 3000` in a Dockerfile publishes port 3000 to the host"
+    ],
+    "answer": [
+      0,
+      1,
+      2
+    ],
+    "explain": "`EXPOSE` is metadata (and input for `-P`). Binding to 127.0.0.1 restricts access to the host; `-p 80` chooses an ephemeral host port (see `docker port`). On a Mac there's an extra hop from macOS into the VM."
+  },
+  {
+    "type": "single",
+    "q": "Your NestJS app runs natively on your Mac on port 4000, and a containerised worker needs to call it. Which hostname should the worker use?",
+    "options": [
+      "`host.docker.internal`",
+      "`172.17.0.1` always",
+      "`docker0`",
+      "`localhost`"
+    ],
+    "answer": 0,
+    "explain": "Docker Desktop, OrbStack and Colima resolve `host.docker.internal` to the host. On Linux Engine add `--add-host=host.docker.internal:host-gateway` (Compose: `extra_hosts`)."
+  },
+  {
+    "type": "single",
+    "q": "Your production image has no shell tools. You need to see which ports the running `api` container is listening on and capture its traffic. What's the best approach?",
+    "options": [
+      "`docker exec api apt-get install tcpdump`",
+      "`docker run --rm -it --network container:api nicolaka/netshoot`, then `ss -ltnp` and `tcpdump -i eth0`",
+      "Rebuild the image with debugging tools",
+      "`docker inspect api`"
+    ],
+    "answer": 1,
+    "explain": "Sharing the target's network namespace gives you its interfaces and sockets with a full toolset, without modifying the app image or container."
+  },
+  {
+    "type": "single",
+    "q": "Three containers share the network alias `search`. What does `dig +short search` return from another container on that network?",
+    "options": [
+      "An error: aliases must be unique",
+      "A virtual IP that load-balances with health checks",
+      "Only the first container's IP",
+      "All three IPs (DNS round-robin)"
+    ],
+    "answer": 3,
+    "explain": "The embedded DNS returns all matching addresses. There is no virtual IP or health checking on a bridge network; clients pick an address and may cache it. That's what `docker compose --scale` relies on."
+  },
+  {
+    "type": "single",
+    "q": "Which driver would you choose for a batch container that must have no network access at all?",
+    "options": [
+      "`bridge` with `--internal`",
+      "`host`",
+      "`none`",
+      "`macvlan`"
+    ],
+    "answer": 2,
+    "explain": "`--network none` gives the container only a loopback interface. An `--internal` bridge still allows traffic to other containers on that network."
+  },
+  {
+    "type": "multi",
+    "q": "You created `backend` with `docker network create --internal backend` and attached Postgres only to it. Which are true? (select all)",
+    "options": [
+      "Containers on another network can resolve the name `postgres`",
+      "Other containers on `backend` can reach Postgres by name",
+      "A container attached to both `backend` and a normal network can act as the bridge between tiers",
+      "Postgres cannot reach the internet"
+    ],
+    "answer": [
+      1,
+      2,
+      3
+    ],
+    "explain": "Internal networks have no external gateway but work normally between members. Names are only resolvable by containers that share a network with the target. Multi-homed containers (like an API on both networks) connect tiers."
+  },
+  {
+    "type": "single",
+    "q": "After connecting to your company VPN, containers can no longer reach some internal company hosts, and `docker network inspect` shows a `192.168.x.0/20` subnet that overlaps the VPN's range. What's the durable fix?",
+    "options": [
+      "Configure `default-address-pools` in the daemon config so Docker allocates non-overlapping subnets, then recreate the networks",
+      "Disable the embedded DNS server",
+      "Set `--dns 8.8.8.8` on every container",
+      "Use `--network host` everywhere"
+    ],
+    "answer": 0,
+    "explain": "Overlapping subnets make the host route company traffic into the Docker bridge. Setting `default-address-pools` (Docker Desktop: Settings → Docker Engine) avoids collisions for new networks. DNS settings don't fix routing."
+  }
+]

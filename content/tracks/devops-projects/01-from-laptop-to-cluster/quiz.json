@@ -1,0 +1,156 @@
+[
+  {
+    "type": "single",
+    "q": "Why does shipit-api's `/healthz` (liveness) deliberately NOT check Postgres?",
+    "options": [
+      "Because liveness probes cannot run SQL",
+      "Because Postgres is checked by the startupProbe instead",
+      "Because a database blip would make kubelet restart every API pod at once, turning a short dependency outage into a full outage with cold starts",
+      "Because liveness probes are only used by the HPA"
+    ],
+    "answer": 2,
+    "explain": "Liveness answers \"is this process wedged?\". Restarting the API does not fix the database. Dependency checks belong in readiness, which removes the pod from load balancing without restarting it."
+  },
+  {
+    "type": "single",
+    "q": "You push an image built on your M-series Mac with plain `docker build` and deploy it to an amd64 EKS node group. Pods fail immediately. What error do you most likely see, and what is the fix?",
+    "options": [
+      "`exec format error`; build a multi-arch image with `docker buildx build --platform linux/amd64,linux/arm64 --push`",
+      "`OOMKilled`; raise the memory limit",
+      "`ImagePullBackOff`; make the GHCR package public",
+      "`CreateContainerConfigError`; add the missing Secret"
+    ],
+    "answer": 0,
+    "explain": "`docker build` on Apple Silicon produces linux/arm64. An amd64 node can pull it (single-arch image) but cannot execute the binary, giving `exec format error`. An image index with both platforms lets each node pull the right variant."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about the Dockerfile's `FROM --platform=$BUILDPLATFORM node:22-bookworm-slim AS build` stage are true? (select all)",
+    "options": [
+      "It makes the final image smaller by itself",
+      "It runs natively on the build machine even when targeting another architecture",
+      "It is safe here because TypeScript compiles to architecture-neutral JavaScript",
+      "It would also be safe for installing native modules like `bcrypt` that are copied into the runtime image"
+    ],
+    "answer": [
+      1,
+      2
+    ],
+    "explain": "`$BUILDPLATFORM` is the builder's own platform, so the stage avoids QEMU. That is correct for compiling JS. Native modules compiled there would target the wrong CPU, which is why production dependencies are installed in a target-platform stage. Image size comes from the multi-stage copy, not from this flag."
+  },
+  {
+    "type": "single",
+    "q": "Kubernetes refuses to start the app with `container has runAsNonRoot and image has non-numeric user (node), cannot verify user is non-root`. What is the cleanest fix?",
+    "options": [
+      "Remove `runAsNonRoot` from the pod spec",
+      "Add `allowPrivilegeEscalation: true`",
+      "Run the container as root and drop capabilities instead",
+      "Use `USER 1000:1000` in the Dockerfile or set `runAsUser: 1000` in the pod securityContext"
+    ],
+    "answer": 3,
+    "explain": "Kubelet cannot resolve a user name to a UID without reading the image's /etc/passwd, so it cannot prove a named user is non-root. A numeric UID (in the image or the pod spec) satisfies the check without weakening security."
+  },
+  {
+    "type": "single",
+    "q": "Why are the Gateway API CRDs installed with `terraform_data` + `kubectl apply --server-side` instead of `kubernetes_manifest` resources?",
+    "options": [
+      "`kubernetes_manifest` cannot create CRDs at all",
+      "`kubernetes_manifest` needs a reachable API server at plan time, which does not exist yet when the same apply creates the kind cluster",
+      "`kubectl` is faster than the kubernetes provider",
+      "Server-side apply is required for HTTPRoutes"
+    ],
+    "answer": 1,
+    "explain": "`kubernetes_manifest` fetches OpenAPI schemas from the API server during plan. On a from-zero run the cluster does not exist yet, so plan fails. A local-exec runs at apply time, after the cluster is up. Server-side apply is used because the CRD manifests are large."
+  },
+  {
+    "type": "single",
+    "q": "With `replicas: 2`, `maxUnavailable: 0`, `maxSurge: 1`, you deploy a version whose readiness probe always fails. What happens?",
+    "options": [
+      "One new pod is created and never becomes Ready; the two old pods keep serving; the rollout eventually reports `ProgressDeadlineExceeded`",
+      "Both old pods are replaced and all traffic gets 503",
+      "Kubernetes automatically rolls back to the previous ReplicaSet",
+      "The new pod is restarted by the readiness probe until it succeeds"
+    ],
+    "answer": 0,
+    "explain": "`maxUnavailable: 0` means an old pod is only removed after a new one is Ready. The rollout stalls safely. Kubernetes does not roll back by itself; Helm's `--rollback-on-failure` (formerly `--atomic`) or Argo CD can. Readiness failures never restart a container; only liveness does."
+  },
+  {
+    "type": "multi",
+    "q": "During a rollout you see a few 502s even though readiness is correct. Which changes reduce them? (select all)",
+    "options": [
+      "Set `CMD [\"npm\", \"start\"]` so npm can forward signals",
+      "Lower the liveness probe period to 1 second",
+      "Keep serving for a few seconds after SIGTERM (app-level delay or a `preStop` sleep) before closing the server",
+      "Make sure `terminationGracePeriodSeconds` is larger than the shutdown delay plus drain time"
+    ],
+    "answer": [
+      2,
+      3
+    ],
+    "explain": "SIGTERM and endpoint removal happen in parallel, so the proxy may still route to a terminating pod briefly. Delaying `server.close()` covers that window, and the grace period must be long enough to avoid SIGKILL mid-request. `npm start` makes signal handling worse, and liveness timing is unrelated."
+  },
+  {
+    "type": "single",
+    "q": "You `kubectl patch` the shipit-api Deployment that Terraform deployed with `helm_release`. What does `terraform plan` most likely show?",
+    "options": [
+      "A diff reverting your patch",
+      "An error because the release is locked",
+      "No changes, because the helm provider compares against the release stored by Helm, not the live objects",
+      "A plan to destroy and recreate the release"
+    ],
+    "answer": 2,
+    "explain": "Helm stores the rendered release in a Secret; the provider diffs chart and values against that. Live-object drift is invisible to it. A pull-based controller like Argo CD with self-heal compares live state continuously and reverts the drift."
+  },
+  {
+    "type": "single",
+    "q": "Why does the app chart set a memory limit but no CPU limit?",
+    "options": [
+      "CPU limits are not supported by kind",
+      "CPU limits cause CFS throttling that adds latency to Node's single-threaded event loop, while a memory limit contains leaks; requests still guarantee fair CPU share and drive the HPA",
+      "The HPA requires CPU limits to be absent",
+      "Memory limits are required by the restricted Pod Security Standard"
+    ],
+    "answer": 1,
+    "explain": "A throttled event loop stalls every in-flight request. Memory is not compressible, so a limit stops one leaking pod from hurting the node. HPA utilisation is computed against requests, which are set."
+  },
+  {
+    "type": "single",
+    "q": "Your `curl localhost:8080/` returns `404 page not found` right after Milestone 3, before any app is deployed. What does that tell you?",
+    "options": [
+      "The kind port mapping is broken",
+      "The Gateway API CRDs are missing",
+      "Traefik crashed and Docker returned the 404",
+      "The whole path works: Docker port mapping, NodePort and Traefik; there is just no matching route yet"
+    ],
+    "answer": 3,
+    "explain": "Only Traefik can produce that response, so the request crossed the host port mapping into the kind node and the NodePort Service. A 404 from the proxy means \"no route matched\", which is expected before the HTTPRoute exists."
+  },
+  {
+    "type": "multi",
+    "q": "Which are honest trade-offs of creating the database Secret with `random_password` + `kubernetes_secret_v1` in Terraform? (select all)",
+    "options": [
+      "Kubernetes encrypts Secrets with the Terraform state key",
+      "The password never appears in Git",
+      "The password is stored in plain text in Terraform state, so state must be protected",
+      "Rotating the password requires coordinating Postgres and the Secret"
+    ],
+    "answer": [
+      1,
+      2,
+      3
+    ],
+    "explain": "Generated secrets stay out of Git, but state holds them in clear text, so production state belongs in an encrypted, access-controlled backend. Rotation is manual here; External Secrets Operator with a secret manager is the usual production answer. Kubernetes Secret encryption at rest is unrelated to Terraform."
+  },
+  {
+    "type": "single",
+    "q": "In the Argo CD challenge, why is the Application created via a tiny local Helm chart and `helm_release` rather than `kubernetes_manifest`?",
+    "options": [
+      "Argo CD ignores Applications created by Terraform",
+      "Helm releases sync faster",
+      "The Application CRD is installed by the Argo CD chart in the same apply, and `kubernetes_manifest` needs that CRD's schema at plan time",
+      "`kubernetes_manifest` cannot set finalizers"
+    ],
+    "answer": 2,
+    "explain": "Same reason as the Gateway API CRDs: at the first plan the CRD does not exist yet. `helm_release` renders and applies at apply time, after `depends_on` ensures Argo CD (and its CRDs) is installed."
+  }
+]

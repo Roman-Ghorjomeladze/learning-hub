@@ -1,0 +1,158 @@
+[
+  {
+    "type": "single",
+    "q": "A teammate runs Postgres with no mounts, runs `docker stop db && docker start db`, and the data is still there. They conclude the setup is persistent. What happens after `docker rm db` and a fresh `docker run`?",
+    "options": [
+      "The data is automatically restored from the image cache",
+      "Docker refuses to remove a container that has database files",
+      "The data is still there because Docker snapshots the writable layer on stop",
+      "The data is gone unless the image's declared `VOLUME` created an anonymous volume and they reattach that exact volume"
+    ],
+    "answer": 3,
+    "explain": "Stop/start keeps the writable layer; `docker rm` deletes it. The postgres image declares a `VOLUME`, so data actually went to an anonymous volume, but a new container gets a *new* anonymous volume. Effectively the data is lost unless you dig out the old hash-named volume. Always use a named volume."
+  },
+  {
+    "type": "single",
+    "q": "You run `docker run -v ./config.yml:/etc/app/config.yml myapp` from the wrong directory, so `./config.yml` doesn't exist. What happens?",
+    "options": [
+      "Docker creates a named volume called `config.yml`",
+      "Docker creates an empty **directory** at that host path and mounts it, so the app sees a directory instead of a file",
+      "Docker copies the image's config file to the host",
+      "Docker fails with `bind source path does not exist`"
+    ],
+    "answer": 1,
+    "explain": "The `-v` syntax silently creates missing bind sources as directories. `--mount type=bind` would fail loudly instead, which is why `--mount` is recommended for scripts."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about named volumes are true? (select all)",
+    "options": [
+      "A volume used by a stopped container cannot be removed until that container is removed",
+      "An empty named volume is pre-populated with the image's content at the mount path",
+      "They can be listed, inspected and removed with `docker volume` commands",
+      "They are always stored in the macOS filesystem on a Mac"
+    ],
+    "answer": [
+      0,
+      1,
+      2
+    ],
+    "explain": "Volumes are pre-populated when empty, managed via `docker volume`, and reference-counted by containers (running or stopped). On a Mac they live on the Linux VM's disk, not in macOS, which is why they are faster than bind mounts there."
+  },
+  {
+    "type": "single",
+    "q": "Your non-root Node image (USER node, UID 1000) fails with `EACCES` writing to `/app/uploads`, which is a fresh named volume. The image never creates `/app/uploads`. What's the cleanest fix?",
+    "options": [
+      "In the Dockerfile, `RUN mkdir -p /app/uploads && chown node:node /app/uploads` before `USER node`, then use a new volume",
+      "`chmod 777` the volume in an entrypoint script",
+      "Run the container as root",
+      "Switch to a bind mount"
+    ],
+    "answer": 0,
+    "explain": "Docker created the mount point owned by root because the image had no such directory. An empty named volume copies the image directory including ownership, so preparing it in the image fixes it without running as root or opening permissions to everyone."
+  },
+  {
+    "type": "single",
+    "q": "You upgrade your Compose file from `postgres:17` to `postgres:18` but keep the volume mounted at `/var/lib/postgresql/data`. Everything starts, but after `docker compose down && docker compose up` the tables are gone. Why?",
+    "options": [
+      "Postgres 18 deletes data on shutdown by default",
+      "In the 18+ image `PGDATA` moved under `/var/lib/postgresql/18/docker` and the image's `VOLUME` is `/var/lib/postgresql`, so data went to an anonymous volume that was replaced",
+      "Compose always recreates named volumes on `up`",
+      "The volume driver doesn't support Postgres 18"
+    ],
+    "answer": 1,
+    "explain": "From 18 the image uses a version-specific PGDATA and declares `VOLUME /var/lib/postgresql`. Your named volume at `.../data` isn't where data is written, so the real data lands in an anonymous volume. (Pointing 18 at a 17-initialised data dir would also fail; major upgrades need `pg_upgrade` or dump/restore.) Check `docker inspect` mounts after any DB change."
+  },
+  {
+    "type": "multi",
+    "q": "Which are good uses for a tmpfs mount? (select all)",
+    "options": [
+      "`/tmp` for a container running with a read-only root filesystem",
+      "Short-lived sensitive files you never want written to disk",
+      "A throwaway Postgres for fast integration tests",
+      "The data directory of a production database"
+    ],
+    "answer": [
+      0,
+      1,
+      2
+    ],
+    "explain": "tmpfs lives in RAM and vanishes when the container stops: great for scratch space, secrets and disposable test databases, terrible for production data."
+  },
+  {
+    "type": "single",
+    "q": "On an Apple Silicon Mac, `npm test` inside a container is 3x slower when the project (including `node_modules`) is bind-mounted than when it's copied into the image. What's the most likely cause?",
+    "options": [
+      "Bind mounts are always read-only on macOS",
+      "overlay2 copy-up is copying node_modules on every run",
+      "The container is running under amd64 emulation",
+      "Every file operation on the bind mount crosses the macOS-to-Linux-VM file-sharing layer, and module resolution touches thousands of files"
+    ],
+    "answer": 3,
+    "explain": "Bind mounts on a Mac go through VirtioFS (or older gRPC FUSE/osxfs) between macOS and the VM. Lots of small file operations make that overhead visible. Keep `node_modules` in the container (volume or image) or use sync-based approaches like `docker compose watch` or synchronized file shares."
+  },
+  {
+    "type": "single",
+    "q": "What is the standard way to back up a named volume with plain Docker?",
+    "options": [
+      "`docker volume backup <name>`",
+      "`docker commit` the container that uses the volume",
+      "`docker save` the volume",
+      "Run a throwaway container that mounts the volume and a host directory, and `tar` from one to the other"
+    ],
+    "answer": 3,
+    "explain": "There's no built-in volume backup command. `docker commit` and `docker save` work on images and do **not** include volume contents. The tar-in-a-helper-container idiom is the documented approach; for databases prefer a logical dump such as `pg_dump`."
+  },
+  {
+    "type": "single",
+    "q": "You change `POSTGRES_PASSWORD` in your compose file and restart. The app still can't log in with the new password. Why?",
+    "options": [
+      "The image only uses `POSTGRES_*` init variables when the data directory is empty; an existing cluster keeps its original password",
+      "Environment variables are cached in the image",
+      "Compose ignores environment changes unless you use `--build`",
+      "Postgres requires a full host reboot to change passwords"
+    ],
+    "answer": 0,
+    "explain": "Initialisation (users, passwords, `/docker-entrypoint-initdb.d` scripts) runs once on an empty data dir. Change the password with `ALTER USER` or recreate the volume in dev."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about `docker volume prune` on a current Docker Engine are correct? (select all)",
+    "options": [
+      "It removes volumes attached to stopped containers",
+      "`docker compose down -v` removes the named volumes declared in that project",
+      "By default it removes only unused **anonymous** volumes",
+      "`docker volume prune --all` also removes unused named volumes"
+    ],
+    "answer": [
+      1,
+      2,
+      3
+    ],
+    "explain": "Since Engine 23, prune only targets anonymous volumes unless you pass `-a/--all`. A volume referenced by any container, even a stopped one, is in use and won't be pruned. `compose down -v` is the usual way local databases get deleted, deliberately or not."
+  },
+  {
+    "type": "single",
+    "q": "In development you bind-mount `.` over `/app` and the container suddenly fails with `Cannot find module 'express'`, although the image ran `npm ci`. What happened?",
+    "options": [
+      "Bind mounts don't support symlinks",
+      "The bind mount hides the image's `/app`, including its `node_modules`",
+      "Node can't read files from bind mounts",
+      "npm ci didn't run because of the build cache"
+    ],
+    "answer": 1,
+    "explain": "A mount replaces the target path's contents for that container. Your host project has no (or different-architecture) `node_modules`, so the module is missing. Mount a volume at `/app/node_modules`, mount only `src/`, or use `compose watch`."
+  },
+  {
+    "type": "single",
+    "q": "Which `--mount` option makes a bind mount read-only?",
+    "options": [
+      "`bind-propagation=readonly`",
+      "`ro=true`",
+      "`readonly` (or `ro`)",
+      "`mode=444`"
+    ],
+    "answer": 2,
+    "explain": "`--mount type=bind,source=...,target=...,readonly` (alias `ro`). With `-v` you append `:ro`. Propagation options control mount event sharing, not write permissions."
+  }
+]

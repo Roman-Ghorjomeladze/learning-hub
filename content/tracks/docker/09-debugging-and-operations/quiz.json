@@ -1,0 +1,154 @@
+[
+  {
+    "type": "single",
+    "q": "A container shows `Exited (137)`. `docker inspect` reports `OOMKilled=false`. `docker events` shows `kill signal=15` and, 10 seconds later, `kill signal=9`. What happened?",
+    "options": [
+      "The process segfaulted",
+      "The kernel OOM killer terminated the process",
+      "The image has the wrong architecture",
+      "`docker stop` sent SIGTERM, the process didn't exit within the grace period, so Docker sent SIGKILL"
+    ],
+    "answer": 3,
+    "explain": "137 = SIGKILL. With `OOMKilled=false` and a TERM-then-KILL sequence, it's a stop timeout: the app ignores SIGTERM (often PID 1 is a shell/npm, or Node has no SIGTERM handler as PID 1)."
+  },
+  {
+    "type": "single",
+    "q": "Your new image fails with `exec /usr/local/bin/entrypoint.sh: no such file or directory`, but `docker run --entrypoint sh <img> -c 'ls -l /usr/local/bin/entrypoint.sh'` shows the file exists and is executable. What's the most likely cause?",
+    "options": [
+      "The container is out of memory",
+      "The image needs `--privileged`",
+      "The file is in the wrong layer",
+      "The interpreter in the shebang doesn't exist: e.g. CRLF line endings (`#!/bin/sh\\r`) or `#!/bin/bash` on Alpine"
+    ],
+    "answer": 3,
+    "explain": "The kernel reports ENOENT for the missing *interpreter*. Convert line endings to LF (and enforce with `.gitattributes`) or use an interpreter that exists in the image."
+  },
+  {
+    "type": "multi",
+    "q": "Match exit codes correctly. Which statements are true? (select all)",
+    "options": [
+      "125 means the docker CLI/daemon failed to create or start the container",
+      "127 means the command was not found in the image",
+      "139 means the process died from a segmentation fault",
+      "143 means the process was killed by SIGKILL"
+    ],
+    "answer": [
+      0,
+      1,
+      2
+    ],
+    "explain": "143 = 128 + 15 (SIGTERM). SIGKILL is 137 (128 + 9). 139 = 128 + 11 (SIGSEGV)."
+  },
+  {
+    "type": "single",
+    "q": "You built an image on your M-series Mac and deployed it to an x86 EC2 instance. The container immediately fails with `exec format error`. What's the fix?",
+    "options": [
+      "Switch to `--network host`",
+      "Build for the target platform, ideally multi-arch: `docker buildx build --platform linux/amd64,linux/arm64 --push`",
+      "Add `chmod +x` to the entrypoint",
+      "Increase the memory limit"
+    ],
+    "answer": 1,
+    "explain": "Your image contains arm64 binaries; the server is amd64. Build for both platforms so each host pulls the matching variant."
+  },
+  {
+    "type": "single",
+    "q": "Your production image is distroless; `docker exec -it api sh` fails. Which approach lets you see the API's processes, sockets and files without changing the image?",
+    "options": [
+      "Rebuild with bash installed",
+      "`docker run --rm -it --pid container:api --network container:api nicolaka/netshoot` and use `ps`, `ss`, `/proc/1/root`",
+      "`docker logs api --details`",
+      "`docker commit api` and run the result with a shell"
+    ],
+    "answer": 1,
+    "explain": "A sidecar joining the target's PID and network namespaces gives you a full toolset while the target stays untouched. `docker debug` (Docker Desktop) automates this."
+  },
+  {
+    "type": "single",
+    "q": "A server's disk is full. `docker system df` shows little in images, but `/var/lib/docker/containers` is 40 GB. What's the likely cause and fix?",
+    "options": [
+      "Anonymous volumes; run `docker volume prune`",
+      "Build cache; run `docker builder prune`",
+      "Unrotated `json-file` logs; configure `max-size`/`max-file` (or the `local` driver) and recreate containers",
+      "Too many networks; run `docker network prune`"
+    ],
+    "answer": 2,
+    "explain": "Container log files live under `/var/lib/docker/containers/<id>/`. The default json-file driver doesn't rotate. Set rotation daemon-wide and recreate containers (options apply at creation)."
+  },
+  {
+    "type": "single",
+    "q": "A Node container with `--memory 256m` keeps dying with exit 137 and no stack trace. What's a good first improvement for observability while you investigate the leak?",
+    "options": [
+      "Set `NODE_OPTIONS=--max-old-space-size=192` so V8 throws a heap-out-of-memory error with a stack trace before the cgroup limit is hit",
+      "Remove the memory limit",
+      "Switch to the `none` logging driver",
+      "Use `--restart always`"
+    ],
+    "answer": 0,
+    "explain": "The kernel OOM kill is instant and silent. Capping the V8 heap below the container limit turns it into a JavaScript error you can see in logs (though memory outside the heap, like Buffers, still counts toward the cgroup limit)."
+  },
+  {
+    "type": "multi",
+    "q": "Why might `docker stop` take the full 10 seconds for a Node app? (select all)",
+    "options": [
+      "The container uses exec form with `--init`",
+      "The app's SIGTERM handler waits for long-running requests that never finish",
+      "Node is PID 1 and the code registers no SIGTERM handler, so the signal is ignored",
+      "The Dockerfile uses shell form `CMD npm start`, so a shell is PID 1 and doesn't forward SIGTERM"
+    ],
+    "answer": [
+      1,
+      2,
+      3
+    ],
+    "explain": "Shell-form commands, PID 1 without handlers, and handlers that never complete all lead to SIGKILL after the grace period. `--init` (tini) plus exec form fixes the signal-forwarding problem."
+  },
+  {
+    "type": "single",
+    "q": "Which command shows a container's healthcheck history including the output of each check?",
+    "options": [
+      "`docker top <c>`",
+      "`docker logs --health <c>`",
+      "`docker stats <c>`",
+      "`docker inspect -f '{{json .State.Health}}' <c>`"
+    ],
+    "answer": 3,
+    "explain": "`.State.Health` contains the status, failing streak and the last few check results with exit codes and output, which is where you'll see `curl: not found` and similar."
+  },
+  {
+    "type": "single",
+    "q": "You want to free disk space on a dev Mac but must keep your local Postgres data in the named volume `shipit_pgdata`, which isn't attached to any container right now. Which command is unsafe?",
+    "options": [
+      "`docker volume prune --all`",
+      "`docker builder prune`",
+      "`docker container prune`",
+      "`docker image prune -a --filter until=168h`"
+    ],
+    "answer": 0,
+    "explain": "`--all` makes volume prune include unused **named** volumes, so it would delete `shipit_pgdata`. Plain `docker volume prune` (Engine 23+) only removes unused anonymous volumes."
+  },
+  {
+    "type": "single",
+    "q": "Builds got slow and the first build line says `transferring context: 1.2GB`. What's the fix?",
+    "options": [
+      "Use `--no-cache`",
+      "Increase Docker Desktop's CPU allocation",
+      "Add a `.dockerignore` excluding `node_modules`, `.git`, build output and other large files",
+      "Switch to the `local` logging driver"
+    ],
+    "answer": 2,
+    "explain": "The whole build context is sent to BuildKit before building. Excluding unneeded files shrinks the transfer and also avoids cache invalidation from irrelevant changes."
+  },
+  {
+    "type": "single",
+    "q": "What does `docker events --since 30m --filter container=api` help you with that `docker logs api` can't?",
+    "options": [
+      "It shows CPU usage",
+      "It shows daemon-level lifecycle events like `oom`, `kill` (with signal), `die` (with exit code), `restart` and `health_status`",
+      "It shows the Dockerfile",
+      "It shows the application's stdout"
+    ],
+    "answer": 1,
+    "explain": "Logs show what the process printed; events show what the daemon did to the container. Combining both is how you reconstruct incidents."
+  }
+]

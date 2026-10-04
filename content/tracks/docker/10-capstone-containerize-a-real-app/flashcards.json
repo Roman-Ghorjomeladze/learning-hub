@@ -1,0 +1,14 @@
+[
+  { "front": "The four stages of the capstone API Dockerfile", "back": "`build` (tsc on `$BUILDPLATFORM`), `prod-deps` (`npm ci --omit=dev` per target), `dev` (all deps + `tsx watch`), `runtime` (last stage = default target, non-root)." },
+  { "front": "Why make the production stage the last stage?", "back": "`docker build .` and CI without `--target` produce the production image by default; dev tooling needs an explicit `target: dev`." },
+  { "front": "Why keep app files root-owned in the runtime image?", "back": "The app runs as `node` and can read but not modify its own code, so a compromised process can't tamper with it (defence in depth alongside a read-only rootfs)." },
+  { "front": "Why does nginx use `resolver 127.0.0.11` with a variable in `proxy_pass`?", "back": "nginx then resolves `api` per request (with a TTL): it starts even if the API is down and follows IP changes when the API container is recreated." },
+  { "front": "`/healthz` vs `/readyz`", "back": "Liveness: the process is up (no dependency checks). Readiness: dependencies (DB, Redis) are reachable and the service can take traffic." },
+  { "front": "How does shipit read the DB password in prod?", "back": "Compose secret at `/run/secrets/db_password`; Postgres reads `POSTGRES_PASSWORD_FILE`, the API's config reads `DB_PASSWORD_FILE`." },
+  { "front": "Capstone startup chain", "back": "db healthy + cache healthy → migrate exits 0 → api healthy → web starts." },
+  { "front": "Two networks in the prod-like stack", "back": "`edge`: web + api. `data` (`internal: true`): api, migrate, db, cache. Only web publishes a port." },
+  { "front": "Tagging scheme for releases", "back": "Immutable semver tag (`1.0.0`) plus `sha-<commit>` for traceability; deploy and sign by digest." },
+  { "front": "How do you check that a pushed image has both platforms and attestations?", "back": "`docker buildx imagetools inspect <ref>`; add `--format '{{json (index .SBOM \"linux/arm64\").SPDX}}'` for the SBOM." },
+  { "front": "How do you push to GHCR from your Mac?", "back": "PAT (classic) with `write:packages`; `echo $TOKEN | docker login ghcr.io -u <user> --password-stdin`; image names must be lowercase." },
+  { "front": "CI hardening for the image workflow", "back": "Pin actions to commit SHAs, use `GITHUB_TOKEN` with `packages: write` only, scan by digest, fail on fixable criticals, cache with `type=gha`." }
+]

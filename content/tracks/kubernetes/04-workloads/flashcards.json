@@ -1,0 +1,17 @@
+[
+  { "front": "Deployment vs ReplicaSet", "back": "A ReplicaSet keeps N identical pods but never updates existing ones. A Deployment manages one ReplicaSet per pod-template version to provide rolling updates and rollbacks." },
+  { "front": "maxSurge vs maxUnavailable", "back": "maxSurge: how many pods above `replicas` may exist during a rollout (rounds up). maxUnavailable: how many below `replicas` may be unavailable (rounds down). Defaults 25%/25%." },
+  { "front": "What is `minReadySeconds`?", "back": "How long a new pod must be Ready before it counts as available for rollout progress. Catches pods that crash shortly after starting." },
+  { "front": "What happens when `progressDeadlineSeconds` is exceeded?", "back": "The `Progressing` condition becomes False with reason `ProgressDeadlineExceeded` and `rollout status` exits non-zero. No automatic rollback." },
+  { "front": "Rollout commands", "back": "`kubectl rollout status | history | undo [--to-revision=N] | pause | resume | restart deploy/<name>`" },
+  { "front": "Blue/green with plain Kubernetes", "back": "Two full Deployments with labels `color=blue`/`color=green`; switch traffic by patching the Service selector." },
+  { "front": "Canary with plain Kubernetes", "back": "A stable and a canary Deployment sharing a label the Service selects; the replica ratio sets the approximate traffic split." },
+  { "front": "Four guarantees of a StatefulSet", "back": "Stable ordinal names, stable per-pod DNS via a headless Service, per-pod PVCs from `volumeClaimTemplates`, ordered create/update/delete (by default)." },
+  { "front": "What is a headless Service?", "back": "A Service with `clusterIP: None`. DNS returns the pod IPs directly, and StatefulSet pods get records like `pod-0.svc-name.ns.svc.cluster.local`." },
+  { "front": "StatefulSet `partition`", "back": "`updateStrategy.rollingUpdate.partition: N` only updates pods with ordinal ≥ N: a manual canary for stateful apps." },
+  { "front": "Job: completions, parallelism, backoffLimit", "back": "completions = successful pods needed; parallelism = pods at once; backoffLimit = retries before Failed (default 6)." },
+  { "front": "What does `ttlSecondsAfterFinished` do?", "back": "Deletes a finished Job (and its pods) automatically after the given number of seconds." },
+  { "front": "CronJob concurrencyPolicy values", "back": "`Allow` (overlap allowed, default), `Forbid` (skip if previous still running), `Replace` (kill previous, start new)." },
+  { "front": "Run a CronJob immediately", "back": "`kubectl create job <name> --from=cronjob/<cronjob>`" },
+  { "front": "Pick the controller: queue worker, nightly export, node agent, Kafka broker", "back": "Deployment, CronJob, DaemonSet, StatefulSet (ideally via an operator)." }
+]

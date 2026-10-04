@@ -1,0 +1,154 @@
+[
+  {
+    "type": "single",
+    "q": "A single root module creates an EKS cluster, configures the kubernetes provider from `aws_eks_cluster` attributes, and creates a `kubernetes_manifest`. On a brand-new account, `terraform plan` fails. Why?",
+    "options": [
+      "`kubernetes_manifest` only works with kind",
+      "EKS clusters must be created with `-parallelism=1`",
+      "Provider configuration depends on values known only after apply, but `kubernetes_manifest` must contact the API server during plan",
+      "The kubernetes provider does not support EKS"
+    ],
+    "answer": 2,
+    "explain": "Providers are configured before resources are planned. With the cluster not yet created, the provider's host and credentials are unknown; `kubernetes_manifest` needs the API to fetch the resource schema at plan time. Split cluster and workloads into separate stacks."
+  },
+  {
+    "type": "single",
+    "q": "After upgrading to helm provider `~> 3.0`, `terraform validate` reports `Blocks of type \"kubernetes\" are not expected here`. What is the fix?",
+    "options": [
+      "Downgrade Terraform",
+      "Rewrite `kubernetes { ... }` as the nested attribute `kubernetes = { ... }`",
+      "Add `experiments { manifest = true }`",
+      "Move the block into each `helm_release`"
+    ],
+    "answer": 1,
+    "explain": "Helm provider v3 moved to the Plugin Framework; `kubernetes`, `experiments` and `registry` (now `registries`) became attributes. `set`, `set_list` and `set_sensitive` became lists of objects."
+  },
+  {
+    "type": "single",
+    "q": "Which is valid helm provider v3 syntax inside `helm_release`?",
+    "options": [
+      "`values { replicaCount = 2 }`",
+      "`set { name = \"replicaCount\" value = \"2\" }`",
+      "`set = { replicaCount = 2 }`",
+      "`set = [{ name = \"replicaCount\", value = \"2\" }]`"
+    ],
+    "answer": 3,
+    "explain": "In v3, `set` is a list of objects with `name` and `value`. `values` takes a list of YAML strings, typically `[yamlencode({...})]`."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about `kubernetes_manifest` are true? (select all)",
+    "options": [
+      "It needs the API server, and the CRD for the kind, to exist at plan time",
+      "It applies objects with server-side apply",
+      "It is the recommended way to deploy every Deployment and Service",
+      "It can manage custom resources such as `HTTPRoute` or Argo CD `Application`"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "`kubernetes_manifest` handles arbitrary kinds via server-side apply but requires a live API and existing CRDs during plan. For core objects, typed `*_v1` resources are simpler and work better with unknown values."
+  },
+  {
+    "type": "single",
+    "q": "You install Argo CD with `helm_release` and want Terraform to also create the first Argo CD `Application` in the same stack, applied from scratch in one run. What works best?",
+    "options": [
+      "A second `helm_release` using the `argocd-apps` chart with `depends_on = [helm_release.argocd]`",
+      "It is impossible; Argo CD Applications cannot be managed by Terraform",
+      "`kubernetes_manifest` with `depends_on = [helm_release.argocd]`",
+      "`kubectl apply` in a `local-exec` provisioner on the Argo CD release"
+    ],
+    "answer": 0,
+    "explain": "`depends_on` does not help `kubernetes_manifest` because the CRD must exist during plan. A Helm release renders and installs at apply time, after Argo CD (and its CRDs) exist. A local-exec works but is invisible to Terraform's state and drift detection."
+  },
+  {
+    "type": "single",
+    "q": "Your team ships `shipit-api` ten times a day. Where should the image tag bump happen in a Terraform + Argo CD setup?",
+    "options": [
+      "In the EKS module's node group configuration",
+      "With `kubectl set image` from developers' laptops",
+      "In the Git repository Argo CD watches (e.g. a Helm values file), merged via PR",
+      "In a Terraform variable, followed by `terraform apply` from CI on every deploy"
+    ],
+    "answer": 2,
+    "explain": "Application delivery belongs to GitOps: a PR changes the desired state in Git and Argo CD syncs it. Terraform stays for the slow-changing cluster and platform layers, keeping plans small and cluster credentials out of CI."
+  },
+  {
+    "type": "single",
+    "q": "You change `kind_config` (adding a worker node) on a cluster managed by `tehcyx/kind`. What does the plan show?",
+    "options": [
+      "An in-place update that adds a node",
+      "No changes; kind config is ignored after creation",
+      "The cluster will be destroyed and recreated",
+      "An error asking you to run `kind` manually"
+    ],
+    "answer": 2,
+    "explain": "The kind provider creates and deletes clusters but does not modify them, so changes to the cluster definition force replacement. Everything inside the cluster is lost, another reason to keep workloads in separate stacks that can be re-applied."
+  },
+  {
+    "type": "single",
+    "q": "Someone runs `kubectl -n demo scale deploy/whoami --replicas=5` on a Deployment managed by `kubernetes_deployment_v1` with `replicas = 2`. What happens on the next `terraform apply`?",
+    "options": [
+      "Nothing; Terraform ignores runtime changes",
+      "Terraform deletes and recreates the Deployment",
+      "Terraform updates its code to 5",
+      "Terraform detects the drift during refresh and sets replicas back to 2"
+    ],
+    "answer": 3,
+    "explain": "Refresh reads the live object, sees 5, and plans an in-place update to the declared 2. If an HPA should control replicas, ignore the field with `lifecycle { ignore_changes = [spec[0].replicas] }`."
+  },
+  {
+    "type": "multi",
+    "q": "Which items typically belong in Terraform rather than in Argo CD? (select all)",
+    "options": [
+      "The VPC and EKS cluster",
+      "The `shipit-api` Deployment's image tag",
+      "Argo CD itself and its root Application",
+      "IAM roles for workloads (IRSA / Pod Identity)"
+    ],
+    "answer": [
+      0,
+      2,
+      3
+    ],
+    "explain": "Terraform handles cloud resources and bootstraps the platform, including Argo CD. Application releases are GitOps territory. Add-ons like cert-manager can go either way, as long as only one tool owns each object."
+  },
+  {
+    "type": "single",
+    "q": "Why does `helm_release` not show drift when someone edits a Deployment inside the release with `kubectl edit`?",
+    "options": [
+      "Terraform state stores the release (chart, version, values), not each rendered object, so it compares release inputs and metadata",
+      "Because the Deployment is in a different namespace",
+      "The helm provider disables refresh",
+      "Helm releases cannot drift"
+    ],
+    "answer": 0,
+    "explain": "The helm provider tracks release-level attributes. Changes to individual objects inside the release usually go unnoticed until the release is upgraded. GitOps tools, by contrast, diff every object continuously."
+  },
+  {
+    "type": "single",
+    "q": "Configuring the helm provider for EKS in a second stack, which authentication approach is recommended?",
+    "options": [
+      "Disable authentication on the EKS endpoint",
+      "Use the kind provider's client certificate",
+      "Copy a long-lived ServiceAccount token into `terraform.tfvars`",
+      "An `exec` block that runs `aws eks get-token` to fetch short-lived tokens"
+    ],
+    "answer": 3,
+    "explain": "EKS tokens expire after about 15 minutes; `exec` fetches a fresh one whenever Terraform needs it, using your current AWS credentials. Static tokens are long-lived secrets and end up in state or files."
+  },
+  {
+    "type": "single",
+    "q": "Roughly what does a minimal EKS lab (control plane, one NAT gateway, one small node) cost if forgotten for a month?",
+    "options": [
+      "Well over $100",
+      "Nothing; EKS is free tier",
+      "About $5",
+      "Exactly $0.10"
+    ],
+    "answer": 0,
+    "explain": "The control plane alone is ~$0.10/hour (~$73/month), a NAT gateway ~$33/month plus data, and the node, EBS and public IPv4 add more. Always destroy EKS labs the same day."
+  }
+]

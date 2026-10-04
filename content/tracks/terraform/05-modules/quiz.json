@@ -1,0 +1,166 @@
+[
+  {
+    "type": "single",
+    "q": "In the root module you write `module.api.docker_container.this.name`. What happens?",
+    "options": [
+      "It works; module resources are public",
+      "It works only with `depends_on`",
+      "It returns null",
+      "It fails: callers can only read a module's outputs, so the module must expose the name as an output"
+    ],
+    "answer": 3,
+    "explain": "A module's internals are private. Outputs are the module's only way to return values, so add `output \"container_name\" { value = docker_container.this.name }` and use `module.api.container_name`."
+  },
+  {
+    "type": "single",
+    "q": "Which `required_providers` constraint is most appropriate inside a reusable child module?",
+    "options": [
+      "`version = \">= 4.0\"`",
+      "`version = \"= 4.6.0\"`",
+      "No `required_providers` at all",
+      "`version = \"latest\"`"
+    ],
+    "answer": 0,
+    "explain": "Child modules should declare a minimum version they're compatible with, leaving the exact range to the root module (which also has the lock file). Exact pins in modules cause unsatisfiable constraints for callers."
+  },
+  {
+    "type": "single",
+    "q": "Adding `for_each` to a module call fails with `Module is incompatible with count, for_each, and depends_on`. What's the cause?",
+    "options": [
+      "The module has no outputs",
+      "The module uses `count` internally",
+      "The module contains its own `provider` block",
+      "`for_each` keys must be numbers"
+    ],
+    "answer": 2,
+    "explain": "Modules with provider configurations can't be used with `count`, `for_each` or `depends_on`. Remove the provider block from the child; it inherits the root's default configuration, or receives one via `providers = {}`."
+  },
+  {
+    "type": "single",
+    "q": "Which source pins a Git-hosted module subdirectory to a release?",
+    "options": [
+      "`source = \"git::https://github.com/acme/modules.git/web-app\"` with `version = \"1.2.0\"`",
+      "`source = \"github.com/acme/modules@v1.2.0/web-app\"`",
+      "`source = \"git::https://github.com/acme/modules.git//web-app?ref=main\"`",
+      "`source = \"git::https://github.com/acme/modules.git//web-app?ref=v1.2.0\"`"
+    ],
+    "answer": 3,
+    "explain": "`//` separates the repo from the subdirectory and `?ref=` selects a tag, branch or commit. `version` only works for registry sources. Tracking `main` means code can change without any change in your repo."
+  },
+  {
+    "type": "multi",
+    "q": "Which are good practices for designing a reusable module? (select all)",
+    "options": [
+      "Every variable has a type and description",
+      "Accept dependencies such as a network ID as inputs instead of creating them inside",
+      "Expose every argument of the underlying resource as a variable for flexibility",
+      "Use `moved` blocks when renaming resources inside the module"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "Typed, documented inputs, dependency inversion and `moved` blocks make modules safe to use and upgrade. Passing through every resource argument adds no value over using the resource directly and creates a huge API to maintain."
+  },
+  {
+    "type": "single",
+    "q": "You extract `docker_container.api` into `module.api` (resource `this`). Without anything else, what does the plan show, and how do you avoid it?",
+    "options": [
+      "No changes; Terraform matches by container name",
+      "Destroy + create; add `moved { from = docker_container.api  to = module.api.docker_container.this }`",
+      "An error; you must run `terraform state rm` first",
+      "Destroy + create; unavoidable when introducing modules"
+    ],
+    "answer": 1,
+    "explain": "Terraform tracks objects by address. A `moved` block maps the old address to the new one inside the module, so the plan shows a move with no changes (as long as the module generates the same arguments)."
+  },
+  {
+    "type": "single",
+    "q": "A module creates S3 buckets in two regions and needs two AWS provider configurations. How does the module declare that?",
+    "options": [
+      "`configuration_aliases = [aws.primary, aws.replica]` in the module's `required_providers`, with the caller passing `providers = { aws.primary = aws, aws.replica = aws.dr }`",
+      "Two `provider \"aws\"` blocks inside the module",
+      "A `region` variable used in a provider block in the module",
+      "It's impossible; one module can only use one provider configuration"
+    ],
+    "answer": 0,
+    "explain": "`configuration_aliases` declares the provider configuration names the module expects; the caller maps its configurations to them with the `providers` argument. Provider blocks inside modules are discouraged."
+  },
+  {
+    "type": "single",
+    "q": "Your module is consumed from Git with `?ref=v1.4.0`. You need consumers to get a fix. What do they have to do?",
+    "options": [
+      "Nothing; `terraform plan` fetches the latest commit",
+      "Run `terraform init -upgrade` without changing anything",
+      "Change the ref to the new tag (e.g. `v1.4.1`) and run `terraform init`",
+      "Delete `.terraform.lock.hcl`"
+    ],
+    "answer": 2,
+    "explain": "A Git ref is fixed until the consumer edits it. `init -upgrade` re-resolves registry `version` constraints, not a pinned Git tag. The lock file doesn't track modules at all."
+  },
+  {
+    "type": "single",
+    "q": "Which statement about child modules and providers is correct?",
+    "options": [
+      "A child module inherits the parent's default (unaliased) provider configurations automatically",
+      "Every child module must contain its own provider block",
+      "Child modules can only use aliased providers",
+      "Providers must be passed explicitly to every module"
+    ],
+    "answer": 0,
+    "explain": "Default configurations are inherited implicitly. You only need `providers = { ... }` to pass an aliased configuration, or when a module declares `configuration_aliases`."
+  },
+  {
+    "type": "single",
+    "q": "A team built a `platform` module with 90 variables including `create_vpc`, `create_db`, `create_cache` and `use_existing_vpc`. What's the main design problem?",
+    "options": [
+      "Too few outputs",
+      "Boolean variables aren't allowed in modules",
+      "It's a 'god module' hiding many modules behind boolean flags; smaller focused modules composed in the root are easier to understand, test and reuse",
+      "It should use `count` instead of variables"
+    ],
+    "answer": 2,
+    "explain": "Flag soup makes plans hard to predict and every change risky for all callers. Composition (network, database, cache modules wired in the root) with dependency inversion handles 'create vs use existing' at the caller."
+  },
+  {
+    "type": "multi",
+    "q": "You're considering a popular public registry module. What should you do before relying on it? (select all)",
+    "options": [
+      "Read its source code and recent changelog",
+      "Pin a specific version or tight range",
+      "Check maintenance activity and open issues",
+      "Always use the latest version without a constraint so you get fixes"
+    ],
+    "answer": [
+      0,
+      1,
+      2
+    ],
+    "explain": "Public modules run with your credentials and evolve. Review them like any dependency, pin versions, and upgrade deliberately while reading the plan."
+  },
+  {
+    "type": "single",
+    "q": "What's the address of the volume created with `count` inside a module instance called with `for_each` key `\"site\"`?",
+    "options": [
+      "`module.app.site.docker_volume.this`",
+      "`docker_volume.app[\"site\"]`",
+      "`module[\"app\"].site.docker_volume[0]`",
+      "`module.app[\"site\"].docker_volume.this[0]`"
+    ],
+    "answer": 3,
+    "explain": "Each level adds its instance key: module call `app` with key `\"site\"`, then the resource `docker_volume.this` with count index `0`."
+  },
+  {
+    "type": "single",
+    "q": "What does `terraform-docs markdown table --output-mode inject --output-file README.md ./modules/web-app` do?",
+    "options": [
+      "Generates input/output tables from the module's variables and outputs and writes them between the BEGIN_TF_DOCS/END_TF_DOCS markers in README.md",
+      "Validates the module",
+      "Publishes the module to the registry",
+      "Converts the README into HCL"
+    ],
+    "answer": 0,
+    "explain": "terraform-docs keeps README tables in sync with code by reading types, defaults and descriptions. Inject mode replaces only the marked section, preserving hand-written text."
+  }
+]

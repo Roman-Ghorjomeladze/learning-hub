@@ -1,0 +1,9 @@
+{
+  "title": "Integrated projects",
+  "tagline": "Combine Docker, Kubernetes and Terraform in end-to-end projects.",
+  "description": "Portfolio-grade projects that tie the three tracks together: provision a cluster with Terraform, ship a containerised app with Helm, automate it with CI/CD, then practise incident response in break-and-fix drills.",
+  "accent": "#B45309",
+  "level": "Intermediate → Advanced",
+  "prerequisites": ["docker", "kubernetes", "terraform"],
+  "pages": []
+}

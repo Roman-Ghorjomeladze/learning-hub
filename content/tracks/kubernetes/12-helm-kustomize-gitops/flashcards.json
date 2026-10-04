@@ -1,0 +1,17 @@
+[
+  { "front": "Helm: chart vs release vs revision", "back": "Chart = package of templates + values. Release = one installation of a chart under a name. Revision = numbered version of a release created by each install, upgrade or rollback." },
+  { "front": "Idempotent Helm deploy command for CI", "back": "`helm upgrade --install <rel> <chart> -n <ns> --create-namespace -f values.yaml --set image.tag=$SHA --wait --timeout 5m --rollback-on-failure` (`--atomic` in Helm 3)." },
+  { "front": "Helm values precedence (low → high)", "back": "Chart `values.yaml` < parent chart values < `-f` files in order given < `--set`/`--set-string`/`--set-file`." },
+  { "front": "Commands to inspect a release", "back": "`helm list -A`, `helm status`, `helm history`, `helm get values [--all]`, `helm get manifest`, `helm rollback <rel> <rev>`." },
+  { "front": "`include` vs `template` in Helm", "back": "Both render a named template, but `include` returns a string you can pipe (`| nindent 4`), so it is preferred." },
+  { "front": "Why must Deployment selector labels be stable?", "back": "`spec.selector` is immutable. If it contains a changing value (version), upgrades fail with `field is immutable`. Use name + instance only." },
+  { "front": "Helm trick to restart pods when a ConfigMap changes", "back": "Pod template annotation `checksum/config: {{ include (print $.Template.BasePath \"/configmap.yaml\") . | sha256sum }}`." },
+  { "front": "How do you validate a chart before deploying?", "back": "`helm lint --strict`, `helm template ... | kubectl apply --dry-run=server -f -` (or `helm install --dry-run=server`), `helm test` after install, `ct`/helm-unittest in CI." },
+  { "front": "Push a chart to an OCI registry", "back": "`helm package ./chart` then `helm push chart-0.1.0.tgz oci://registry/path` (after `helm registry login`). Install with `helm install rel oci://registry/path/chart --version 0.1.0`." },
+  { "front": "Kustomize: what does a generator's hash suffix achieve?", "back": "A changed ConfigMap/Secret gets a new name, and references are rewritten, so Deployments roll automatically and old pods keep the old config." },
+  { "front": "Kustomize: modern fields replacing deprecated ones", "back": "`labels` replaces `commonLabels`; `patches` replaces `patchesStrategicMerge` and `patchesJson6902`. Run `kustomize edit fix` to migrate." },
+  { "front": "The four OpenGitOps principles", "back": "Declarative, versioned and immutable, pulled automatically, continuously reconciled." },
+  { "front": "Argo CD: sync status vs health status", "back": "Sync: does live state match Git (Synced/OutOfSync)? Health: are resources working (Healthy/Progressing/Degraded/Missing)? They are independent." },
+  { "front": "Argo CD `automated.prune` vs `automated.selfHeal`", "back": "Prune deletes live resources that were removed from Git. Self-heal re-syncs when live state drifts from Git (e.g. after kubectl edit)." },
+  { "front": "Argo CD ApplicationSet vs app-of-apps", "back": "ApplicationSet generates many Applications from one template plus generators (list, cluster, git directories). App-of-apps is an Application whose manifests are other Applications, used to bootstrap a cluster." }
+]

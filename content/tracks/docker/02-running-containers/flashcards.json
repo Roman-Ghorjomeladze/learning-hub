@@ -1,0 +1,17 @@
+[
+  { "front": "Container lifecycle states", "back": "created → running ⇄ paused → exited (→ restarting via a policy) → removed. `dead` if removal failed. A container runs as long as its PID 1." },
+  { "front": "`docker run` is shorthand for...", "back": "`docker create` + `docker start` (+ attach to output unless `-d`). `docker start` reuses an existing container; `run` always makes a new one." },
+  { "front": "`-p 8080:3000` vs `-p 127.0.0.1:8080:3000`", "back": "The first binds host port 8080 on all interfaces; the second only on loopback. Prefer loopback for anything not meant to be public." },
+  { "front": "Does `EXPOSE` publish a port?", "back": "No. It's documentation (and the list `-P` uses). Only `-p`/`-P` publish ports." },
+  { "front": "env precedence in `docker run`", "back": "Image `ENV` < `--env-file` < `-e`. `--env-file` does no quote processing or variable expansion." },
+  { "front": "The four restart policies", "back": "`no`, `on-failure[:N]` (non-zero exits only), `always` (even after a manual stop once the daemon restarts), `unless-stopped` (respects manual stops). Restarts back off exponentially." },
+  { "front": "What happens on `docker stop`?", "back": "SIGTERM (or the image's `STOPSIGNAL`) → wait the timeout (default 10 s, `-t`/`--stop-timeout`) → SIGKILL. `docker kill` sends SIGKILL immediately." },
+  { "front": "Why does `node server.js` as PID 1 ignore `docker stop`?", "back": "PID 1 gets no default signal actions. Node's internal handler only resets the terminal and re-raises with the default action, which PID 1 ignores. Register `process.on('SIGTERM')` and/or use `--init`." },
+  { "front": "What does `--init` do?", "back": "Runs tini as PID 1: it forwards signals to your process and reaps zombie children. Your app then gets normal default signal behaviour." },
+  { "front": "Graceful shutdown in Node, in three steps", "back": "On SIGTERM: `server.close()` to stop accepting and drain requests, close DB/Redis pools, `process.exit(0)` — plus a hard timeout shorter than the grace period." },
+  { "front": "Exit codes 125, 126, 127", "back": "125: docker run itself failed. 126: command not executable. 127: command not found." },
+  { "front": "Exit codes 130, 137, 139, 143", "back": "128 + signal: 130 SIGINT, 137 SIGKILL (OOM/kill/timeout), 139 SIGSEGV, 143 SIGTERM." },
+  { "front": "attach vs exec", "back": "`attach` connects to PID 1's existing stdio (Ctrl-C may stop it; detach with Ctrl-P Ctrl-Q). `exec` starts a new process in the container's namespaces — use it for debugging." },
+  { "front": "Template for a container's IP and a label", "back": "`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' api` and `{{index .Config.Labels \"com.example.env\"}}`." },
+  { "front": "Safe cleanup by label", "back": "`docker rm -f $(docker ps -aq --filter label=project=x)` or `docker container prune --filter label=project=x`. Be careful with `docker volume prune -a` and `system prune --volumes`." }
+]

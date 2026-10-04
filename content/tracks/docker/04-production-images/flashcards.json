@@ -1,0 +1,17 @@
+[
+  { "front": "Typical stages of a Node/TypeScript multi-stage build", "back": "`deps` (npm ci, all deps) → `build` (tsc → dist) and `prod-deps` (npm ci --omit=dev) in parallel → minimal `runtime` that copies `dist` + prod `node_modules`." },
+  { "front": "Build one intermediate stage", "back": "`docker build --target build -t app:build .` — e.g. to run tests with devDependencies in CI." },
+  { "front": "Base image options for Node, from biggest to smallest surface", "back": "Full Debian → slim Debian (safe default) → Alpine (musl caveats) → distroless / Chainguard (Wolfi) / Docker Hardened Images (no shell, low CVEs)." },
+  { "front": "Why `USER 1000:1000` rather than `USER node`?", "back": "Kubernetes `runAsNonRoot` can only verify numeric UIDs; a named user makes the kubelet refuse to start the pod." },
+  { "front": "Why keep app files root-owned while running as non-root?", "back": "The process can read but not modify its code, so a compromised app can't tamper with it. Create specific writable dirs (or use /tmp, volumes) only where needed." },
+  { "front": "npm cache mount", "back": "`RUN --mount=type=cache,target=/root/.npm npm ci` — keeps npm's download cache across builds without putting it in a layer." },
+  { "front": "Build secret, end to end", "back": "Dockerfile: `RUN --mount=type=secret,id=npmrc,target=/root/.npmrc npm ci`. CLI: `docker build --secret id=npmrc,src=$HOME/.npmrc .` Not in layers, history or cache key." },
+  { "front": "SSH mount for private git deps", "back": "`RUN --mount=type=ssh git clone git@github.com:org/repo.git` with `docker build --ssh default .` (needs a loaded ssh-agent and known_hosts in the image)." },
+  { "front": "Build and push a multi-platform image", "back": "`docker buildx build --platform linux/amd64,linux/arm64 -t repo/app:1.0.0 --push .` → one index with a manifest per platform." },
+  { "front": "BUILDPLATFORM vs TARGETPLATFORM", "back": "BUILDPLATFORM: where the build runs (e.g. linux/arm64). TARGETPLATFORM: what you're building for. `FROM --platform=$BUILDPLATFORM` runs platform-independent stages natively (cross-compilation)." },
+  { "front": "HEALTHCHECK without curl", "back": "`HEALTHCHECK CMD [\"node\", \"-e\", \"fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"]`. Kubernetes ignores HEALTHCHECK and uses probes." },
+  { "front": "SBOM and provenance with buildx", "back": "`--sbom=true --provenance=mode=max` attaches attestations to the index (shown as `unknown/unknown` manifests). Inspect with `docker buildx imagetools inspect <ref> --format '{{json .SBOM}}'`." },
+  { "front": "Key OCI labels", "back": "`org.opencontainers.image.title`, `.source`, `.version`, `.revision`, `.created`, `.licenses`, `.description`. Put per-build ones last to keep the cache." },
+  { "front": "Tagging strategy in one line", "back": "Every build: `sha-<short>`. Releases: `X.Y.Z`, `X.Y`, `X`. Immutable release tags. Deploy by digest. Never deploy `latest`." },
+  { "front": "Lint and scan commands", "back": "`hadolint Dockerfile` (DL3xxx rules + ShellCheck), `docker build --check .` (BuildKit checks), `trivy image --severity HIGH,CRITICAL --ignore-unfixed app:tag`." }
+]

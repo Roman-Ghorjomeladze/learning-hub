@@ -1,0 +1,169 @@
+[
+  {
+    "type": "single",
+    "q": "Where does Helm (v3 and v4) store the state of a release such as its revisions and values?",
+    "options": [
+      "In annotations on every resource it created",
+      "In a Tiller pod in `kube-system`",
+      "In `~/.helm` on the machine that ran `helm install`",
+      "In Secrets of type `helm.sh/release.v1` in the release's namespace"
+    ],
+    "answer": 3,
+    "explain": "Helm has had no server component since v3. Each revision is stored as a Secret named `sh.helm.release.v1.<release>.v<revision>` in the release namespace, which is how `helm history`, `get values` and `rollback` work from any machine with access."
+  },
+  {
+    "type": "single",
+    "q": "Your pipeline runs `helm upgrade --install shipit ./chart --set image.tag=$SHA`. A bad image makes the rollout hang and the pipeline times out, leaving the Deployment half-rolled. Which flags fix this behaviour?",
+    "options": [
+      "`--reuse-values`",
+      "`--dry-run=server`",
+      "`--wait --timeout 5m --rollback-on-failure` (`--atomic` in Helm 3)",
+      "`--force-replace`"
+    ],
+    "answer": 2,
+    "explain": "`--wait` makes Helm block until resources are ready, `--timeout` bounds it, and `--rollback-on-failure`/`--atomic` rolls back to the previous revision on failure. `--force-replace` deletes and recreates resources; `--reuse-values` is about values; a dry run deploys nothing."
+  },
+  {
+    "type": "single",
+    "q": "Values are given as: chart `values.yaml` sets `replicaCount: 1`, `-f base.yaml` sets 2, `-f prod.yaml` sets 4, and `--set replicaCount=3`. What value is used?",
+    "options": [
+      "1",
+      "2",
+      "4",
+      "3"
+    ],
+    "answer": 3,
+    "explain": "Precedence is chart defaults < `-f` files in order (later wins) < `--set`. So `--set replicaCount=3` overrides everything."
+  },
+  {
+    "type": "single",
+    "q": "After bumping `appVersion`, `helm upgrade` fails with `spec.selector: Invalid value: ... field is immutable`. What is the root cause?",
+    "options": [
+      "The Deployment's selector labels include a value that changes between releases, such as the app version",
+      "The Service selector does not match the pods",
+      "Helm 4 does not support upgrades of Deployments created by Helm 3",
+      "The chart version was not bumped"
+    ],
+    "answer": 0,
+    "explain": "`spec.selector` of a Deployment cannot change after creation. Selector labels must be stable (name + instance). Versions belong in the general labels only. Fixing it requires replacing the Deployment once."
+  },
+  {
+    "type": "single",
+    "q": "You change a value that only affects a ConfigMap in your chart. After `helm upgrade`, the pods still use the old configuration. What is the idiomatic chart fix?",
+    "options": [
+      "Use a pre-upgrade hook that deletes all pods",
+      "Add a `checksum/config` annotation to the pod template computed from the rendered ConfigMap",
+      "Mount the ConfigMap with `subPath`",
+      "Set `imagePullPolicy: Always`"
+    ],
+    "answer": 1,
+    "explain": "Environment variables from a ConfigMap are read at container start. An annotation like `checksum/config: {{ include (print $.Template.BasePath \"/configmap.yaml\") . | sha256sum }}` changes the pod template whenever the ConfigMap changes, triggering a normal rolling update."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about Kustomize are true? (select all)",
+    "options": [
+      "The `images` field can change an image's name, tag or digest without writing a patch",
+      "Kustomize is built into kubectl (`kubectl apply -k`, `kubectl kustomize`)",
+      "Bases must be written as Go templates",
+      "Kustomize stores release revisions so you can roll back with `kubectl rollback -k`",
+      "`configMapGenerator` appends a content hash to the name and updates references, so config changes roll Deployments"
+    ],
+    "answer": [
+      0,
+      1,
+      4
+    ],
+    "explain": "Kustomize transforms plain YAML (no templates), is embedded in kubectl, and has generators with hash suffixes and an images transformer. It has no release concept or rollback; you roll back by applying an earlier Git revision."
+  },
+  {
+    "type": "single",
+    "q": "Your team runs three of its own Node.js services across dev/staging/prod, and installs Argo CD and kube-prometheus-stack. Which approach is most conventional?",
+    "options": [
+      "Only use plain `kubectl apply` with sed replacements",
+      "Write Helm charts for Argo CD and Prometheus yourself; copy YAML per environment for your services",
+      "Fork every third-party chart into your repo and edit the templates",
+      "Install third-party components from their upstream Helm charts; manage your own services with Kustomize overlays (or one simple chart per service)"
+    ],
+    "answer": 3,
+    "explain": "Upstream charts are the supported way to install third-party software, with values for configuration. For your own apps, Kustomize overlays or a small chart with per-environment values files both work well. Copy-paste and sed scripts drift; forking charts makes upgrades painful."
+  },
+  {
+    "type": "multi",
+    "q": "Which are among the four OpenGitOps principles? (select all)",
+    "options": [
+      "Deployments are triggered by CI pushing to the cluster",
+      "Continuously reconciled",
+      "Versioned and immutable storage of desired state",
+      "Declarative desired state",
+      "Pulled automatically by software agents"
+    ],
+    "answer": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "explain": "The principles are declarative, versioned and immutable, pulled automatically, continuously reconciled. CI pushing with cluster credentials is the push model GitOps replaces."
+  },
+  {
+    "type": "single",
+    "q": "An Argo CD Application shows `Synced` but `Degraded`. What does that tell you?",
+    "options": [
+      "Self-heal is disabled",
+      "The live objects match Git, but at least one resource is unhealthy (for example a Deployment whose pods are failing)",
+      "Argo CD cannot reach the Git repository",
+      "Git and the cluster differ"
+    ],
+    "answer": 1,
+    "explain": "Sync status compares desired (Git) and live state; health status evaluates whether resources work. You can apply exactly what is in Git and still have crashing pods; then debug the workload, not Argo CD."
+  },
+  {
+    "type": "single",
+    "q": "With Argo CD self-heal enabled, a Deployment managed by an HPA keeps flapping between 2 replicas and the HPA's desired count. Why, and what is the fix?",
+    "options": [
+      "Pruning deletes the HPA on each sync",
+      "The HPA is broken; delete it",
+      "The manifest in Git sets `replicas: 2`, so Argo CD reverts the HPA's change; omit `replicas` when autoscaling (or ignore that field with `ignoreDifferences`)",
+      "Argo CD does not support HPAs"
+    ],
+    "answer": 2,
+    "explain": "Two controllers fight over `spec.replicas`. Let the HPA own the field: do not set it in the manifest (charts usually wrap `replicas` in `if not .Values.autoscaling.enabled`), or tell Argo CD to ignore the difference."
+  },
+  {
+    "type": "single",
+    "q": "Someone runs `kubectl edit` on a production Deployment managed by Argo CD with automated sync, `prune: true` and `selfHeal: true`. What happens?",
+    "options": [
+      "Argo CD detects the drift and reverts the live object to match Git",
+      "The change persists until the next Git commit",
+      "Argo CD commits the change back to Git",
+      "Argo CD deletes the Deployment because it was modified"
+    ],
+    "answer": 0,
+    "explain": "Self-heal means drift in the cluster triggers a sync back to the Git state. Prune is about deleting resources removed from Git. Argo CD never writes manual cluster changes back to Git."
+  },
+  {
+    "type": "single",
+    "q": "How should you handle a database password in a GitOps repository?",
+    "options": [
+      "Store it in `values.yaml` in a private repository",
+      "Pass it with `--set` in the Argo CD Application",
+      "Commit a Kubernetes Secret; base64 is encoding enough",
+      "Commit an ExternalSecret (or a SealedSecret / SOPS-encrypted file) and let an in-cluster controller produce the Secret"
+    ],
+    "answer": 3,
+    "explain": "Base64 is not encryption, and private repos still leak through clones, forks and CI logs. External Secrets Operator, Sealed Secrets and SOPS keep only references or ciphertext in Git."
+  },
+  {
+    "type": "single",
+    "q": "`helm template` renders fine, but `helm install` fails because a template uses `lookup` to read an existing Secret. Why did rendering succeed?",
+    "options": [
+      "`helm template` ignores all functions",
+      "`lookup` is disabled in Helm 4",
+      "`helm template` does not contact the cluster, so `lookup` returns an empty result instead of failing",
+      "`lookup` only works with `--set`"
+    ],
+    "answer": 2,
+    "explain": "Client-side rendering has no cluster access; `lookup` returns an empty map. Charts relying on `lookup` behave differently between `template`/GitOps rendering and a real install, which is a reason to avoid it in charts meant for Argo CD."
+  }
+]

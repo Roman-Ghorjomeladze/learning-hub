@@ -1,0 +1,16 @@
+[
+  { "front": "Declarative vs imperative IaC?", "back": "Imperative: you script the steps. Declarative: you describe the desired end state; the tool diffs it against reality and computes the steps. Declarative runs are idempotent." },
+  { "front": "What is a Terraform provider?", "back": "A separate plugin executable (downloaded by `terraform init`) that knows one API. Terraform core starts it as a child process and talks to it over gRPC to get schemas and plan/apply changes." },
+  { "front": "What does `terraform init` do?", "back": "Downloads providers and modules into `.terraform/`, writes/reads `.terraform.lock.hcl`, and configures the backend. Safe to re-run; `-upgrade` picks newer versions within constraints." },
+  { "front": "What does `.terraform.lock.hcl` contain and should you commit it?", "back": "The exact selected provider versions and their package checksums. Yes, commit it (like `package-lock.json`). It does not pin modules." },
+  { "front": "`~> 4.6` vs `~> 4.6.0`", "back": "`~> 4.6` = `>= 4.6, < 5.0`. `~> 4.6.0` = `>= 4.6.0, < 4.7.0`. Only the rightmost given component may increase." },
+  { "front": "Core workflow commands in order", "back": "`init` -> `fmt` -> `validate` -> `plan` -> `apply` (and `destroy` to tear down)." },
+  { "front": "Plan symbols: `+`, `-`, `~`, `-/+`, `+/-`, `<=`", "back": "Create; destroy; update in place; destroy then create (replace); create then destroy (create_before_destroy); read a data source." },
+  { "front": "What does `# forces replacement` mean in a plan?", "back": "That attribute can't be changed on the existing object (the provider marks it ForceNew), so Terraform must replace the whole resource." },
+  { "front": "What does `(known after apply)` mean?", "back": "The value is computed by the provider during apply (IDs, IPs, digests), so Terraform can't show it yet." },
+  { "front": "Resource address examples", "back": "`docker_container.web`, `docker_container.web[0]` (count), `docker_container.web[\"api\"]` (for_each), `module.app.docker_container.web`, `data.docker_network.bridge`." },
+  { "front": "How does Terraform know creation order?", "back": "References between blocks create edges in a dependency graph. Independent nodes run in parallel; destroy walks the graph in reverse. `depends_on` is only for hidden dependencies." },
+  { "front": "How do you view the dependency graph?", "back": "`terraform graph` (DOT format; pipe to `dot -Tsvg`). Terraform 1.16+ also supports `terraform graph -format=mermaid`." },
+  { "front": "Default provider source when `required_providers` is missing?", "back": "`registry.terraform.io/hashicorp/<local name>`. Wrong for community providers like `kreuzwerker/docker`, so always declare the source." },
+  { "front": "What is OpenTofu?", "back": "A Linux Foundation fork of Terraform 1.5 created after the 2023 licence change to BSL. HCL-compatible, CLI `tofu`, its own registry, some features of its own such as state encryption." }
+]

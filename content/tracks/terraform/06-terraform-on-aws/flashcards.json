@@ -1,0 +1,17 @@
+[
+  { "front": "Which AWS resources in a typical lab bill hourly even when idle?", "back": "NAT gateways (~$0.045/h + data), load balancers, EKS control planes (~$0.10/h), public IPv4 addresses (~$0.005/h each) and running compute (EC2, Fargate tasks). VPCs, subnets, route tables, IGWs, SGs and IAM are free." },
+  { "front": "Three commands to start a Terraform session with IAM Identity Center", "back": "`aws sso login --profile learn-admin`, `export AWS_PROFILE=learn-admin`, `aws sts get-caller-identity` (confirm the account before applying)." },
+  { "front": "What does `aws configure sso` write?", "back": "A `[profile ...]` section (account ID, role name, region, `sso_session`) and an `[sso-session ...]` section (start URL, SSO region, scopes) in `~/.aws/config`. No long-lived keys." },
+  { "front": "What is `default_tags`?", "back": "A block in the AWS provider whose tags are merged into every taggable resource created by that provider block. Each alias needs its own." },
+  { "front": "Two ways to create a resource in a second region with AWS provider v6", "back": "A provider alias (`provider \"aws\" { alias = \"use1\" region = \"us-east-1\" }` + `provider = aws.use1`) or the per-resource `region` argument." },
+  { "front": "`cidrsubnet(\"10.0.0.0/16\", 8, 1)`", "back": "`10.0.1.0/24` — add 8 bits to the prefix (/16 → /24) and take network number 1." },
+  { "front": "What makes a subnet public vs private?", "back": "Public: its route table sends 0.0.0.0/0 to an internet gateway. Private: no IGW route; outbound only via NAT gateway or VPC endpoints." },
+  { "front": "Why key subnets with `for_each` over AZ names instead of `count`?", "back": "Instances are addressed by stable keys (`aws_subnet.public[\"eu-central-1a\"]`), so adding or removing an AZ doesn't shift indexes and replace other subnets." },
+  { "front": "Task execution role vs task role (ECS)", "back": "Execution role: used by ECS to pull images, write logs and fetch secrets. Task role: assumed by your application code for its own AWS API calls." },
+  { "front": "What does Terraform do to a security group's default egress rule?", "back": "It removes AWS's default allow-all egress rule. Declare egress explicitly (e.g. `aws_vpc_security_group_egress_rule`)." },
+  { "front": "Hardened S3 bucket checklist", "back": "Public access block (all 4 true), ownership controls `BucketOwnerEnforced`, SSE encryption, versioning, lifecycle (noncurrent expiry, abort multipart), bucket policy denying `aws:SecureTransport = false`." },
+  { "front": "`s3:ListBucket` vs `s3:GetObject` resource ARNs", "back": "`ListBucket` acts on the bucket ARN `arn:aws:s3:::name`; `GetObject` acts on object ARNs `arn:aws:s3:::name/*`." },
+  { "front": "Fargate task stops with `CannotPullContainerError ... i/o timeout`. First suspect?", "back": "No network path to the registry: private subnet without NAT/VPC endpoints, public subnet without `assign_public_ip`, or no egress rule." },
+  { "front": "What changed in LocalStack in March 2026?", "back": "Community image discontinued and repo archived; one image that needs a free account + `LOCALSTACK_AUTH_TOKEN`. Free Hobby plan: non-commercial, subset of services (no ECS/ECR at the time of writing), no IAM enforcement." },
+  { "front": "What does `wait_for_steady_state = true` do on `aws_ecs_service`?", "back": "Makes apply wait until the service's deployment is stable, so a crash-looping task fails the apply instead of reporting success." }
+]

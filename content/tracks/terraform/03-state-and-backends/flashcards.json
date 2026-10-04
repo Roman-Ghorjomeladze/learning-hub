@@ -1,0 +1,17 @@
+[
+  { "front": "Four reasons Terraform needs state", "back": "Map config addresses to real IDs; record dependencies/metadata; cache attributes for performance; know what to destroy when blocks are removed." },
+  { "front": "`serial` vs `lineage` in a state file", "back": "`serial` increments on every write (detects stale copies). `lineage` is a UUID set when the state was created (detects unrelated states)." },
+  { "front": "What is drift and how do you handle it?", "back": "Real infrastructure changed outside Terraform. Revert it with a normal apply, or accept it by updating code (optionally `apply -refresh-only` to record observed values)." },
+  { "front": "`terraform plan -refresh-only`", "back": "Shows changes made outside Terraform without proposing infrastructure changes. `apply -refresh-only` writes the observed values into state. Replaced `terraform refresh`." },
+  { "front": "S3 backend locking today", "back": "`use_lockfile = true`: Terraform creates `<key>.tflock` with a conditional PutObject (`If-None-Match`). GA in 1.11. `dynamodb_table` is deprecated." },
+  { "front": "Partial backend configuration", "back": "Leave `backend \"s3\" {}` empty in code and pass settings with `terraform init -backend-config=prod.s3.tfbackend`. Needed because backend blocks can't use variables." },
+  { "front": "`init -migrate-state` vs `init -reconfigure`", "back": "`-migrate-state` copies existing state into the new backend. `-reconfigure` uses the new backend settings without copying anything." },
+  { "front": "How to clear a stale lock", "back": "Confirm nobody is running Terraform, then `terraform force-unlock <LOCK_ID>`. Never `-lock=false`. Use `-lock-timeout=5m` to wait for real locks in CI." },
+  { "front": "`moved` block", "back": "`moved { from = OLD  to = NEW }` changes an object's address in state through the normal plan: renames, moving into modules, switching to count/for_each. Keep it until all states have applied it (forever in shared modules)." },
+  { "front": "`import` block", "back": "`import { to = ADDR  id = \"provider-id\" }` adopts an existing object via plan/apply (1.5+). `terraform plan -generate-config-out=gen.tf` drafts the config (experimental)." },
+  { "front": "`removed` block", "back": "`removed { from = ADDR  lifecycle { destroy = false } }` forgets an object without destroying it (1.7+). Config-driven version of `terraform state rm`." },
+  { "front": "`-replace=ADDR`", "back": "Forces destroy+create of one resource in the plan. Supersedes `terraform taint`." },
+  { "front": "Recovering a bad state write", "back": "Get the previous version (local `.backup` or versioned bucket), check lineage/serial with `jq`, then `terraform state push` (bump serial or `-force` deliberately)." },
+  { "front": "Settings to use the S3 backend with MinIO-compatible servers", "back": "`endpoints = { s3 = \"http://localhost:9000\" }`, `use_path_style = true`, `skip_credentials_validation`, `skip_requesting_account_id`, `skip_metadata_api_check`, `skip_region_validation`; creds via `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`." },
+  { "front": "Plan says it will create something that already exists. Why and fix?", "back": "The object fell out of state (e.g. `state rm`, lost state). Re-adopt it with an `import` block instead of letting apply fail on a name conflict." }
+]

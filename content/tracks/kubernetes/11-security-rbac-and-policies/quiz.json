@@ -1,0 +1,174 @@
+[
+  {
+    "type": "single",
+    "q": "A developer runs `kubectl get pods -n payments` and gets `Error from server (Forbidden): pods is forbidden: User \"jane\" cannot list resource \"pods\"...`. Which stage of the API request path rejected the request?",
+    "options": [
+      "Schema validation",
+      "Authentication",
+      "Admission control",
+      "Authorization"
+    ],
+    "answer": 3,
+    "explain": "The API server knows the user is `jane`, so authentication succeeded (a failure there is a 401 `Unauthorized`). A 403 `Forbidden` naming the user and verb comes from authorization, i.e. RBAC has no rule granting `list` on `pods` in `payments`. Admission only runs for write requests and would show a policy message."
+  },
+  {
+    "type": "single",
+    "q": "You want the same set of permissions (`app-operator`) available in 20 team namespaces, but each team should only get it in its own namespace. What is the idiomatic setup?",
+    "options": [
+      "Twenty copies of a Role `app-operator`, each bound with a ClusterRoleBinding",
+      "One ClusterRole `app-operator` and one ClusterRoleBinding per team",
+      "One ClusterRole `app-operator` and a RoleBinding in each namespace that references it",
+      "One Role in `default` and RoleBindings in every namespace pointing to it"
+    ],
+    "answer": 2,
+    "explain": "A RoleBinding can reference a ClusterRole; the permissions then apply only within the RoleBinding's namespace. This defines the role once and scopes grants per namespace. A ClusterRoleBinding would grant the permissions in all namespaces, and a RoleBinding cannot reference a Role from another namespace."
+  },
+  {
+    "type": "multi",
+    "q": "Which permissions should you treat as effectively admin-level in a namespace? (select all)",
+    "options": [
+      "`list` on `secrets`",
+      "`bind` and `escalate` on roles",
+      "`create` on `pods`",
+      "`create` on `pods/exec`",
+      "`get` on `configmaps`"
+    ],
+    "answer": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "explain": "Creating pods lets you run any ServiceAccount in the namespace and mount any Secret. Listing Secrets returns their values. `bind`/`escalate` let you grant permissions you do not hold. `pods/exec` gives a shell inside running workloads with their credentials. Reading ConfigMaps is low risk as long as you keep secrets out of them."
+  },
+  {
+    "type": "single",
+    "q": "A Deployment applied to a namespace labelled `pod-security.kubernetes.io/enforce=restricted` shows `READY 0/3`, and `kubectl get pods` returns nothing. Where do you find the reason fastest?",
+    "options": [
+      "`kubectl describe replicaset` for the Deployment's ReplicaSet (events)",
+      "The kubelet logs on each node",
+      "`kubectl get events -n kube-system`",
+      "`kubectl logs deploy/<name>`"
+    ],
+    "answer": 0,
+    "explain": "Pod Security Admission evaluates pods, not Deployments. The Deployment is accepted (with a warning), but the ReplicaSet controller's pod creations are rejected, and the rejection message (`violates PodSecurity \"restricted:latest\"...`) is recorded as an event on the ReplicaSet. There are no pods, so there are no logs."
+  },
+  {
+    "type": "single",
+    "q": "A pod using an image built with `USER node` and a pod spec with `runAsNonRoot: true` (no `runAsUser`) is stuck in `CreateContainerConfigError`. Why?",
+    "options": [
+      "`runAsNonRoot` requires `privileged: true`",
+      "The kubelet cannot verify that a non-numeric user name is non-root, so it refuses to start the container",
+      "The `node` user has UID 0 inside the image",
+      "Pod Security Admission blocks images with a USER instruction"
+    ],
+    "answer": 1,
+    "explain": "The kubelet checks the image's configured user against `runAsNonRoot`. A name like `node` cannot be resolved to a UID without reading `/etc/passwd` in the image, so the kubelet fails safe. Use a numeric `USER 1000` in the Dockerfile or set `runAsUser: 1000`."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about ServiceAccount tokens in current Kubernetes are true? (select all)",
+    "options": [
+      "A projected token is bound to the pod and stops working when the pod is deleted",
+      "Every ServiceAccount automatically gets a non-expiring token Secret",
+      "Pods receive a projected token that the kubelet rotates before it expires",
+      "`automountServiceAccountToken: false` can be set on the ServiceAccount or the pod",
+      "A token minted with `--audience vault` is accepted by the Kubernetes API server"
+    ],
+    "answer": [
+      0,
+      2,
+      3
+    ],
+    "explain": "Since 1.24, tokens are requested via the TokenRequest API, are time-limited, bound to the pod and rotated by the kubelet. Long-lived token Secrets are no longer created automatically. Tokens are audience-scoped: the API server rejects a token issued for `vault`."
+  },
+  {
+    "type": "single",
+    "q": "Your NestJS API only talks to Postgres and Redis. What is the best ServiceAccount setup?",
+    "options": [
+      "A dedicated ServiceAccount with no RoleBindings and `automountServiceAccountToken: false`",
+      "A dedicated ServiceAccount bound to `edit` so it can read its own ConfigMaps",
+      "No ServiceAccount; set `serviceAccountName: \"\"`",
+      "Use the namespace's `default` ServiceAccount and bind it to `view`"
+    ],
+    "answer": 0,
+    "explain": "The app never calls the Kubernetes API, so it needs no permissions and no token in its filesystem. A dedicated SA keeps future grants isolated. Every pod runs as some ServiceAccount, so you cannot have none; the env/volume mechanisms deliver ConfigMaps without API access."
+  },
+  {
+    "type": "single",
+    "q": "You applied a default-deny (Ingress and Egress) NetworkPolicy to `shop` and an ingress rule allowing `role=api` → `app=db`. The api pod still cannot connect to `db:5432`, and `nslookup db` fails inside it. What is missing?",
+    "options": [
+      "`hostNetwork: true` on the api pods",
+      "A ClusterIP for the db Service",
+      "Egress rules from the api pods: DNS to CoreDNS and TCP 5432 to `app=db`",
+      "An ingress rule on CoreDNS pods"
+    ],
+    "answer": 2,
+    "explain": "Default deny covers egress too, so the api pods may not send anything, including DNS queries. Allowing ingress on `db` is only half; the client side needs an egress allow to `kube-dns` on 53/UDP+TCP and to `db` on 5432."
+  },
+  {
+    "type": "single",
+    "q": "What does this ingress rule allow?\n\n```yaml\nfrom:\n  - namespaceSelector: { matchLabels: { team: web } }\n  - podSelector: { matchLabels: { app: gateway } }\n```",
+    "options": [
+      "Pods labelled `app=gateway` in every namespace",
+      "All pods in namespaces labelled `team=web`, OR pods labelled `app=gateway` in the policy's own namespace",
+      "Only pods labelled `app=gateway` in namespaces labelled `team=web`",
+      "Nothing, because two selectors conflict"
+    ],
+    "answer": 1,
+    "explain": "Two list items are OR'ed. A bare `podSelector` refers to the policy's own namespace. To get the AND meaning (gateway pods inside team=web namespaces), both selectors must be in the same list item, without the second dash."
+  },
+  {
+    "type": "single",
+    "q": "You created NetworkPolicies on a cluster but connections that should be blocked still succeed. What is the most likely cause?",
+    "options": [
+      "NetworkPolicies only apply to Services of type LoadBalancer",
+      "The policy must be in `kube-system`",
+      "NetworkPolicies need a restart of kube-proxy",
+      "The CNI plugin does not implement NetworkPolicy, so the objects are stored but ignored"
+    ],
+    "answer": 3,
+    "explain": "The API server accepts NetworkPolicy objects regardless of whether anything enforces them. Enforcement is the CNI's job (Calico, Cilium, kindnet on kind v0.24+, VPC CNI with network policy enabled on EKS). Always test with a real connection."
+  },
+  {
+    "type": "single",
+    "q": "You need to reject Deployments without a memory limit, with minimal operational risk and no extra components. What do you use?",
+    "options": [
+      "ValidatingAdmissionPolicy with a CEL expression and a binding",
+      "A validating admission webhook written in Node.js",
+      "A ResourceQuota",
+      "Pod Security Admission at `restricted`"
+    ],
+    "answer": 0,
+    "explain": "ValidatingAdmissionPolicy runs inside the API server (GA since 1.30), so there is no webhook to keep available. PSA does not check resource limits. A ResourceQuota on memory forces pods to declare limits/requests, but it is about totals and also affects pods; it is not a targeted rule with a clear message."
+  },
+  {
+    "type": "multi",
+    "q": "Which are good reasons to choose Kyverno over plain ValidatingAdmissionPolicy? (select all)",
+    "options": [
+      "You want the policy evaluated without any webhook",
+      "You need to verify cosign image signatures at admission",
+      "You need to generate a default NetworkPolicy in every new namespace",
+      "You only need one simple validation rule",
+      "You want background policy reports for existing resources"
+    ],
+    "answer": [
+      1,
+      2,
+      4
+    ],
+    "explain": "Generation, image verification and reports are Kyverno features VAP lacks. Running without a webhook and handling a single simple rule are arguments for VAP."
+  },
+  {
+    "type": "single",
+    "q": "shipit-api on EKS must read objects from one S3 bucket. What is the recommended way to give it credentials?",
+    "options": [
+      "Attach an S3 policy to the node group's instance role",
+      "Store an IAM user's access keys in a Kubernetes Secret",
+      "Map the pod's ServiceAccount to an IAM role via EKS Pod Identity (or IRSA)",
+      "Mount `~/.aws/credentials` from the node with hostPath"
+    ],
+    "answer": 2,
+    "explain": "Pod Identity / IRSA give each ServiceAccount its own short-lived credentials that the AWS SDK picks up automatically. Static keys leak and never rotate; a node role grants the permission to every pod on the node; hostPath breaks isolation and Pod Security."
+  }
+]

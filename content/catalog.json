@@ -1,0 +1,12 @@
+{
+  "title": "Learning Hub",
+  "owner": "Roma",
+  "groups": [
+    {
+      "id": "devops",
+      "title": "DevOps & Infrastructure",
+      "description": "Containers, orchestration and infrastructure as code. Work through the tracks in order: each one builds on the previous.",
+      "tracks": ["docker", "kubernetes", "terraform", "devops-projects"]
+    }
+  ]
+}

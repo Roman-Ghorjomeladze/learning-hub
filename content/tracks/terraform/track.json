@@ -1,0 +1,12 @@
+{
+  "title": "Terraform",
+  "tagline": "Describe infrastructure as code, change it safely, and reuse it with modules.",
+  "description": "HCL, providers, state, expressions, modules, AWS, Kubernetes and a professional workflow with testing and CI. Most labs run locally for free using the Docker, kind and local providers; AWS labs flag every cost.",
+  "accent": "#7B42BC",
+  "level": "Beginner → Advanced",
+  "prerequisites": ["docker"],
+  "pages": [
+    { "id": "cheatsheet", "title": "Cheatsheet", "file": "cheatsheet.md" },
+    { "id": "interview", "title": "Interview questions", "file": "interview.md" }
+  ]
+}

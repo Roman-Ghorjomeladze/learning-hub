@@ -1,0 +1,17 @@
+[
+  { "front": "The four ingredients of a container", "back": "Namespaces (what it can see), cgroups (what it can use), a layered root filesystem (what files it has), reduced privileges (capabilities, seccomp, AppArmor/SELinux) — all on a shared kernel." },
+  { "front": "The seven namespaces Docker uses", "back": "pid, net, mnt, uts, ipc, user, cgroup. Docker creates all but `user` by default." },
+  { "front": "How do you see which namespaces a process is in?", "back": "`ls -l /proc/<pid>/ns` — each entry is a symlink like `net:[4026532242]`; equal inode numbers mean the same namespace." },
+  { "front": "What is special about PID 1 in a container?", "back": "The kernel ignores signals it has no handler for (no default terminate), it must reap zombie children, and when it exits every other process in the namespace is killed." },
+  { "front": "cgroup v2 files behind `--memory`, `--cpus`, `--pids-limit`", "back": "`memory.max`, `cpu.max` (`quota period`, e.g. `150000 100000` for 1.5 CPUs), `pids.max`." },
+  { "front": "Where do you see OOM kills and CPU throttling in cgroup v2?", "back": "`memory.events` (`oom`, `oom_kill` counters) and `cpu.stat` (`nr_throttled`, `throttled_usec`)." },
+  { "front": "Exit code 137", "back": "128 + 9: killed by SIGKILL — after a `docker stop` timeout, `docker kill`, or the OOM killer (check `.State.OOMKilled`)." },
+  { "front": "What is copy-up in overlayfs?", "back": "The first write to a file from a read-only image layer copies the whole file into the container's writable upper layer before modifying it." },
+  { "front": "What is a whiteout?", "back": "A marker (a 0/0 character device in overlayfs) in an upper layer that hides a file from lower layers. The bytes still exist below — deleting in a later layer doesn't shrink an image." },
+  { "front": "Image vs container", "back": "Image: immutable config + ordered, content-addressed read-only layers. Container: image + writable layer + runtime config (namespaces, cgroups, mounts, network) + state." },
+  { "front": "The three OCI specifications", "back": "Image spec (index, manifest, config, layers), runtime spec (bundle = `config.json` + rootfs, executed by runc), distribution spec (registry HTTP API)." },
+  { "front": "The Docker call chain for `docker run`", "back": "CLI → (REST over socket) dockerd → (gRPC) containerd → containerd-shim-runc-v2 → runc → your process. runc exits; the shim stays as the parent." },
+  { "front": "What does `nsenter -t <pid> -n <cmd>` do?", "back": "Runs `<cmd>` in the network namespace of `<pid>` while keeping your own filesystem and tools — great for debugging minimal images." },
+  { "front": "Why are containers a weaker isolation boundary than VMs?", "back": "All containers share the host kernel; a kernel bug or misconfiguration (e.g. `--privileged`, root without user namespaces) can lead to a host compromise. VMs isolate with a hypervisor and separate kernels." },
+  { "front": "What does the containerd image store change in Docker Engine 29?", "back": "Images and layers are managed by containerd snapshotters (`Storage Driver: overlayfs`, `driver-type: io.containerd.snapshotter.v1`) instead of the overlay2 graph driver; it enables local multi-platform images. Concepts are unchanged." }
+]

@@ -1,0 +1,22 @@
+{
+  "title": "IaC & First Steps",
+  "summary": "Why infrastructure as code exists, how Terraform is built (core, providers, registry), HCL basics, the init/plan/apply/destroy workflow and how to read a plan. Labs run locally with the Docker and local providers.",
+  "level": "beginner",
+  "estimatedMinutes": 150,
+  "objectives": [
+    "Explain declarative vs imperative infrastructure and where Terraform fits next to Pulumi, CloudFormation, CDK, Ansible and OpenTofu",
+    "Describe Terraform's architecture: core, providers as plugins over gRPC, the registry and the dependency lock file",
+    "Write a `terraform` block with `required_version`, `required_providers` and sensible version constraints",
+    "Run the core workflow (`init`, `fmt`, `validate`, `plan`, `apply`, `destroy`) and know what each step does",
+    "Read a plan and tell create, destroy, in-place update and replacement apart",
+    "Use resource addresses and inspect the implicit dependency graph with `terraform graph`"
+  ],
+  "resources": [
+    { "title": "What is Terraform?", "url": "https://developer.hashicorp.com/terraform/intro", "type": "docs", "note": "Official introduction and use cases." },
+    { "title": "Terraform language documentation", "url": "https://developer.hashicorp.com/terraform/language", "type": "docs", "note": "The reference for HCL syntax, blocks and expressions." },
+    { "title": "Terraform CLI documentation", "url": "https://developer.hashicorp.com/terraform/cli", "type": "docs", "note": "Every command and flag, including init, plan, apply and graph." },
+    { "title": "Docker provider (kreuzwerker/docker)", "url": "https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs", "type": "docs", "note": "Resources used in the labs: docker_image, docker_container, docker_network, docker_volume." },
+    { "title": "Dependency lock file", "url": "https://developer.hashicorp.com/terraform/language/files/dependency-lock", "type": "docs", "note": "What .terraform.lock.hcl records and how to upgrade providers." },
+    { "title": "OpenTofu", "url": "https://opentofu.org/docs/", "type": "docs", "note": "The open-source fork of Terraform; useful to know it exists and how it differs." }
+  ]
+}

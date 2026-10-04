@@ -1,0 +1,23 @@
+{
+  "title": "Ingress & Gateway API",
+  "summary": "Expose HTTP(S) apps to the outside world: the legacy Ingress API you will still meet everywhere, and Gateway API, the modern role-oriented standard, with host/path routing, canaries, TLS via cert-manager and cross-namespace rules, all on kind.",
+  "level": "intermediate",
+  "estimatedMinutes": 210,
+  "objectives": [
+    "Explain why Services alone are not enough for HTTP traffic and what an L7 proxy/controller adds",
+    "Read and write Ingress resources and know the state of ingress-nginx after its 2026 retirement",
+    "Describe the Gateway API resource model (GatewayClass, Gateway, HTTPRoute, ReferenceGrant) and which role owns each",
+    "Install Envoy Gateway on kind and route traffic by host, path and header",
+    "Split traffic by weight for a canary release",
+    "Terminate TLS at a Gateway using certificates issued by cert-manager from a local CA",
+    "Debug routes using status conditions (Accepted, ResolvedRefs, Programmed)"
+  ],
+  "resources": [
+    { "title": "Gateway API documentation", "url": "https://gateway-api.sigs.k8s.io/", "type": "docs", "note": "The spec, concepts, guides and the list of conformant implementations." },
+    { "title": "Kubernetes docs: Ingress", "url": "https://kubernetes.io/docs/concepts/services-networking/ingress/", "type": "docs", "note": "The Ingress API reference and pathType semantics." },
+    { "title": "Ingress NGINX Retirement: What You Need to Know", "url": "https://www.kubernetes.dev/blog/2025/11/12/ingress-nginx-retirement/", "type": "article", "note": "Official retirement announcement and migration advice." },
+    { "title": "Envoy Gateway docs", "url": "https://gateway.envoyproxy.io/docs/", "type": "docs", "note": "Install, quickstart and task guides for the implementation used in the labs." },
+    { "title": "cert-manager docs", "url": "https://cert-manager.io/docs/", "type": "docs", "note": "Issuers, Certificates and Gateway API integration." },
+    { "title": "ingress2gateway", "url": "https://github.com/kubernetes-sigs/ingress2gateway", "type": "tool", "note": "Converts Ingress manifests (including ingress-nginx annotations) into Gateway API resources." }
+  ]
+}

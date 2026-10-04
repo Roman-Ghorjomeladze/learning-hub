@@ -1,0 +1,169 @@
+[
+  {
+    "type": "single",
+    "q": "A teammate's lab environment cost $35 last month even though nothing was running. The VPC has public and private subnets in two AZs, one NAT gateway, no EC2 instances. What is the most likely cause?",
+    "options": [
+      "The NAT gateway, which bills per hour whether or not traffic flows",
+      "The private route tables",
+      "The internet gateway",
+      "The VPC itself is billed hourly"
+    ],
+    "answer": 0,
+    "explain": "VPCs, subnets, route tables and internet gateways are free. A NAT gateway costs roughly $0.045/hour (about $33/month) plus per-GB processing, even when idle, and its Elastic IP adds a public IPv4 charge."
+  },
+  {
+    "type": "single",
+    "q": "Which is the recommended way for you, as a human, to give Terraform AWS credentials on your Mac?",
+    "options": [
+      "Root account credentials, because they never expire",
+      "An IAM Identity Center profile created with `aws configure sso`, refreshed with `aws sso login` and selected with `AWS_PROFILE`",
+      "`access_key` and `secret_key` in the provider block, read from `terraform.tfvars`",
+      "An IAM user access key stored in `~/.aws/credentials`"
+    ],
+    "answer": 1,
+    "explain": "IAM Identity Center issues short-lived credentials after a browser login; nothing long-lived sits on disk or in code. Static IAM user keys leak and never expire on their own, and root credentials should never be used for daily work."
+  },
+  {
+    "type": "multi",
+    "q": "What does `default_tags` in the AWS provider block give you? (select all)",
+    "options": [
+      "Automatic tags on resources created by a different provider alias without its own `default_tags`",
+      "Encryption of the resources' data",
+      "A consistent way to find Terraform-managed resources in Tag Editor and Cost Explorer",
+      "Tags merged into every taggable resource created through that provider block"
+    ],
+    "answer": [
+      2,
+      3
+    ],
+    "explain": "`default_tags` applies per provider block, so an alias needs its own `default_tags`. Tags are metadata used for ownership, cost allocation and finding leftovers; they have nothing to do with encryption."
+  },
+  {
+    "type": "single",
+    "q": "What does `cidrsubnet(\"10.0.0.0/16\", 8, 10)` return?",
+    "options": [
+      "`10.10.0.0/24`",
+      "`10.0.10.0/24`",
+      "`10.0.0.10/24`",
+      "`10.0.0.0/26`"
+    ],
+    "answer": 1,
+    "explain": "Adding 8 bits to a /16 gives /24 networks; netnum 10 selects the eleventh /24, which is `10.0.10.0/24`."
+  },
+  {
+    "type": "single",
+    "q": "What makes a subnet \"public\" in AWS?",
+    "options": [
+      "Its associated route table has a route for `0.0.0.0/0` to an internet gateway",
+      "It is in the first availability zone",
+      "It has a security group allowing 0.0.0.0/0",
+      "Setting `map_public_ip_on_launch = true`"
+    ],
+    "answer": 0,
+    "explain": "Public means routable to the internet through an IGW. `map_public_ip_on_launch` only auto-assigns public IPs; without the IGW route those IPs are useless. Security groups are per-interface firewalls, not subnet properties."
+  },
+  {
+    "type": "single",
+    "q": "Your Fargate service runs in private subnets with no NAT gateway and no VPC endpoints. Tasks keep stopping with `ResourceInitializationError ... i/o timeout`. What is wrong?",
+    "options": [
+      "The tasks have no network path to the container registry, so the image pull times out",
+      "The CPU architecture is wrong",
+      "Fargate does not support private subnets",
+      "The task role lacks `s3:GetObject`"
+    ],
+    "answer": 0,
+    "explain": "Pulling images and sending logs needs outbound access: a NAT gateway, or VPC endpoints for ECR API, ECR DKR, S3 (gateway) and CloudWatch Logs. A wrong architecture shows as `exec format error` after the pull succeeds."
+  },
+  {
+    "type": "single",
+    "q": "In ECS, which role does the ECS agent use to pull a private ECR image and write logs to CloudWatch?",
+    "options": [
+      "The service-linked role for Auto Scaling",
+      "The task execution role",
+      "The task role",
+      "The EC2 instance profile"
+    ],
+    "answer": 1,
+    "explain": "The task execution role is used by ECS itself (image pull, logs, secrets injection). The task role is what your application code uses to call AWS APIs."
+  },
+  {
+    "type": "multi",
+    "q": "Which settings belong to a hardened S3 bucket in Terraform with AWS provider v4 or later? (select all)",
+    "options": [
+      "`aws_s3_bucket_ownership_controls` with `BucketOwnerEnforced`",
+      "A bucket policy denying requests where `aws:SecureTransport` is false",
+      "`aws_s3_bucket_public_access_block` with all four options true",
+      "A `versioning {}` block inside `aws_s3_bucket`"
+    ],
+    "answer": [
+      0,
+      1,
+      2
+    ],
+    "explain": "Since provider v4 bucket settings are separate resources (`aws_s3_bucket_versioning`, `_server_side_encryption_configuration`, ...). The inline `versioning {}` block is the old style. Public access block, enforced ownership (ACLs off) and a TLS-only policy are standard hardening."
+  },
+  {
+    "type": "single",
+    "q": "You create `aws_security_group.web` with only an ingress rule. Your Fargate task in a public subnet cannot pull its image. Why?",
+    "options": [
+      "Terraform removes AWS's default allow-all egress rule, so the group has no outbound rule",
+      "Ingress rules must be inline blocks",
+      "Security groups are stateless, so responses are blocked",
+      "Public subnets cannot pull images"
+    ],
+    "answer": 0,
+    "explain": "AWS adds an allow-all egress rule to new groups, but the Terraform resource deletes it. You must declare egress explicitly, e.g. `aws_vpc_security_group_egress_rule` with `ip_protocol = \"-1\"`. Security groups are stateful."
+  },
+  {
+    "type": "single",
+    "q": "You need an SNS topic in `us-east-1` for billing alarms while the rest of the stack is in `eu-central-1`, same account. With AWS provider v6, which options work? Choose the best description.",
+    "options": [
+      "Set `AWS_REGION=us-east-1` for that resource only",
+      "Use `depends_on` on a us-east-1 data source",
+      "Only a second Terraform root module can do this",
+      "Either a provider alias with `region = \"us-east-1\"` referenced via `provider = aws.use1`, or the per-resource `region = \"us-east-1\"` argument"
+    ],
+    "answer": 3,
+    "explain": "Aliases have always solved multi-region; provider v6 added enhanced region support so most resources accept `region` directly. Aliases remain necessary for different credentials/accounts or passing providers into modules."
+  },
+  {
+    "type": "single",
+    "q": "Why use `aws_iam_policy_document` instead of a heredoc JSON string for IAM policies?",
+    "options": [
+      "It is the only way to attach a policy to a role",
+      "It renders valid JSON from HCL locally, supports interpolation and composition, and avoids JSON syntax and whitespace diffs",
+      "It enforces least privilege automatically",
+      "It creates a managed policy in AWS"
+    ],
+    "answer": 1,
+    "explain": "It is a data source computed locally (no API call) that outputs `.json`. You still attach it with `aws_iam_role_policy` or `aws_iam_policy`. It does not judge whether your permissions are minimal."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about LocalStack in 2026 are correct? (select all)",
+    "options": [
+      "A successful apply against LocalStack does not prove the same config works on AWS",
+      "Every AWS service, including ECS and EKS, is emulated on the free plan",
+      "The free Hobby plan is for non-commercial use",
+      "It now requires an account and an auth token, even on the free plan"
+    ],
+    "answer": [
+      0,
+      2,
+      3
+    ],
+    "explain": "Since 23 March 2026 a single image requires `LOCALSTACK_AUTH_TOKEN`; the free Hobby tier is non-commercial and covers a subset of services (ECS/ECR are paid at the time of writing). Emulation differs from AWS, and IAM is not enforced on the free plan."
+  },
+  {
+    "type": "single",
+    "q": "When is writing your own VPC resources better than `terraform-aws-modules/vpc`?",
+    "options": [
+      "When you want to avoid pinning versions",
+      "When you are learning, or need a small, very specific design whose every resource you want to review",
+      "Never; community modules are always better",
+      "When you need IPv6, flow logs and endpoints"
+    ],
+    "answer": 1,
+    "explain": "Writing it yourself teaches the parts and yields small plans. The community module is faster and feature-rich, and production teams often wrap it. Either way you pin versions; modules must always be pinned."
+  }
+]

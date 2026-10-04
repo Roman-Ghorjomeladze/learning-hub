@@ -1,0 +1,158 @@
+[
+  {
+    "type": "single",
+    "q": "Why does every Mac container runtime (Docker Desktop, OrbStack, Colima) start a virtual machine?",
+    "options": [
+      "To isolate containers from each other for security",
+      "To emulate amd64 CPUs on Apple Silicon",
+      "Because Apple requires all third-party daemons to run in a sandbox",
+      "Because containers rely on Linux kernel features (namespaces, cgroups, overlay filesystems) that macOS's XNU kernel does not provide"
+    ],
+    "answer": 3,
+    "explain": "Linux containers are Linux processes using Linux kernel features. macOS cannot run them natively, so the runtime boots a small Linux VM and runs the Docker Engine inside it. Emulation of amd64 is a separate, optional concern."
+  },
+  {
+    "type": "single",
+    "q": "You run `docker ps` and get `Cannot connect to the Docker daemon at unix:///var/run/docker-old.sock`. `docker context ls` shows `orbstack *`. What is the most likely cause?",
+    "options": [
+      "A `DOCKER_HOST` environment variable is set and overrides the selected context",
+      "The `orbstack` context is corrupted",
+      "OrbStack is not running",
+      "Your user is not in the `docker` group"
+    ],
+    "answer": 0,
+    "explain": "The error names a socket that is not OrbStack's. `DOCKER_HOST` takes precedence over the current context (and `docker context ls` prints a warning about it). `unset DOCKER_HOST` and remove it from your shell rc files. The docker group is a Linux-host concept you don't need on a Mac."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about bind mounts on macOS are true? (select all)",
+    "options": [
+      "Putting `node_modules` in a named volume instead of the bind mount usually speeds up installs and builds",
+      "File operations cross the VM boundary through a sharing layer such as VirtioFS",
+      "They are as fast as named volumes because both live on your Mac's SSD",
+      "Only folders shared with the VM (e.g. under `/Users`) can be bind-mounted"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "Named volumes live on the VM's own disk and perform like native Linux; bind mounts pay a cost on every file operation because files are served from macOS. Runtimes only share configured host paths into the VM."
+  },
+  {
+    "type": "single",
+    "q": "On an Apple Silicon Mac, `docker run some/legacy-tool` fails with `exec format error`. What does that tell you?",
+    "options": [
+      "The image's entrypoint script has Windows line endings",
+      "The image was built with the classic builder instead of BuildKit",
+      "The VM ran out of memory while starting the container",
+      "The image only contains binaries for another CPU architecture (likely amd64) and no emulation handled it"
+    ],
+    "answer": 3,
+    "explain": "`exec format error` means the kernel could not execute the binary format — usually an amd64 binary on an arm64 kernel without a registered emulator. Try `--platform linux/amd64` with Rosetta enabled, find a multi-arch image, or rebuild for arm64."
+  },
+  {
+    "type": "single",
+    "q": "Why should you install Terraform with `brew install hashicorp/tap/terraform` instead of `brew install terraform`?",
+    "options": [
+      "The core formula is the OpenTofu fork renamed",
+      "The core formula is frozen at the last open-source (MPL) release because newer Terraform versions use the BSL licence",
+      "The tap version is compiled for Apple Silicon and the core one is not",
+      "The tap version includes Terraform Cloud credentials"
+    ],
+    "answer": 1,
+    "explain": "Homebrew core only accepts OSI-licensed software. Terraform moved to the Business Source License in 2023, so the core formula stopped at 1.5.x. HashiCorp's own tap publishes current releases. OpenTofu is a separate formula (`opentofu`)."
+  },
+  {
+    "type": "multi",
+    "q": "A 40-person startup earning $3M per year wants its developers to use a Mac container runtime without paying. Which options are compliant? (select all)",
+    "options": [
+      "Colima",
+      "OrbStack on the free personal licence",
+      "Docker Desktop",
+      "Docker Engine inside a Linux VM they manage themselves"
+    ],
+    "answer": [
+      0,
+      2,
+      3
+    ],
+    "explain": "Docker Desktop is free for businesses with fewer than 250 employees and less than $10M annual revenue. Colima (MIT) and the Docker Engine itself (Apache-2.0) are open source. OrbStack's free tier is for personal use; commercial use requires a paid licence."
+  },
+  {
+    "type": "single",
+    "q": "You run `docker run --rm --cpus 1.5 alpine nproc` on a VM with 4 CPUs. What prints and why?",
+    "options": [
+      "`1` — Docker rounds the limit down",
+      "`4` — `--cpus` sets a CFS time quota, not the set of CPUs the process may use",
+      "`2` — Docker rounds the limit up",
+      "An error: fractional CPUs are not allowed"
+    ],
+    "answer": 1,
+    "explain": "`--cpus 1.5` writes `150000 100000` to `cpu.max`: 150 ms of CPU time per 100 ms period. The process can still be scheduled on all 4 CPUs, so `nproc` shows 4. `--cpuset-cpus` would change the visible CPU set."
+  },
+  {
+    "type": "single",
+    "q": "You built `shipit-api:dev` with OrbStack, then switched to Docker Desktop with `docker context use desktop-linux`. `docker images` no longer lists it. Why?",
+    "options": [
+      "Switching context deletes images from the previous engine",
+      "The image was untagged when the context changed",
+      "Images are stored inside each runtime's VM; the new context talks to a different engine with its own image store",
+      "Docker Desktop hides images built by other tools"
+    ],
+    "answer": 2,
+    "explain": "A context only changes which daemon the CLI talks to. Each runtime has its own VM, disk, images, containers and volumes. Switch back and the image is still there. Run one runtime at a time to avoid confusion and wasted RAM."
+  },
+  {
+    "type": "single",
+    "q": "A container needs to call a dev server running on your Mac at port 4000. Which URL should it use?",
+    "options": [
+      "`http://localhost:4000`",
+      "`http://127.0.0.1:4000`",
+      "`http://172.17.0.1:4000` on every runtime",
+      "`http://host.docker.internal:4000`"
+    ],
+    "answer": 3,
+    "explain": "Inside the container, `localhost` is the container itself. Mac runtimes provide the DNS name `host.docker.internal` pointing back to the Mac host. The bridge gateway IP is inside the VM and is not your Mac."
+  },
+  {
+    "type": "multi",
+    "q": "Your builds fail with `no space left on device`. Which commands help you find and reclaim space? (select all)",
+    "options": [
+      "`docker system df -v`",
+      "`docker system prune`",
+      "`rm ~/Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw` while Docker runs",
+      "`docker builder prune`"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "`docker system df` shows usage by images, containers, volumes and build cache; `builder prune` and `system prune` reclaim it. Deleting the VM disk image by hand destroys all images, containers and volumes and can corrupt the runtime — use the app's reset option if you really want a clean slate."
+  },
+  {
+    "type": "single",
+    "q": "What is the role of Rosetta in a Docker setup on Apple Silicon?",
+    "options": [
+      "It translates the Docker CLI from amd64 to arm64",
+      "It is registered with `binfmt_misc` in the Linux VM so amd64 Linux binaries in containers are translated to arm64 on the fly",
+      "It converts amd64 images into arm64 images when you pull them",
+      "It replaces QEMU for running Windows containers"
+    ],
+    "answer": 1,
+    "explain": "Apple provides a Linux build of Rosetta that the Virtualization framework exposes to the guest. The kernel hands x86-64 ELF binaries to it via binfmt_misc. Images are not converted; they still contain amd64 binaries and run translated, which is slower than native."
+  },
+  {
+    "type": "single",
+    "q": "`docker run --rest<TAB>` does nothing in zsh, although Homebrew installed docker's completion script. What is the most likely fix?",
+    "options": [
+      "Install bash and switch shells",
+      "Add `alias docker='docker --complete'`",
+      "Run `docker completion enable`",
+      "Put Homebrew's `share/zsh/site-functions` on `FPATH` **before** running `compinit` in `~/.zshrc`"
+    ],
+    "answer": 3,
+    "explain": "zsh discovers completion functions on `fpath` when `compinit` runs. If the Homebrew directory is added after `compinit`, or not at all, completions are not loaded. Delete `~/.zcompdump*` and `exec zsh` if the cache is stale."
+  }
+]

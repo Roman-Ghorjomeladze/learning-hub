@@ -1,0 +1,169 @@
+[
+  {
+    "type": "single",
+    "q": "You update a ConfigMap that your Deployment loads with `envFrom`. Ten minutes later the running pods still use the old values. Why?",
+    "options": [
+      "The kubelet sync period is 15 minutes",
+      "`envFrom` requires `immutable: true` to propagate",
+      "Env vars are resolved once at container start and never updated in a running container",
+      "ConfigMap updates are only applied to new nodes"
+    ],
+    "answer": 2,
+    "explain": "Environment variables are copied into the container when it starts. Only directory volume mounts are refreshed by the kubelet. You need a rollout (restart, checksum annotation or hash-named ConfigMap)."
+  },
+  {
+    "type": "multi",
+    "q": "Which ways of consuming a ConfigMap pick up changes in a running container without a restart? (select all)",
+    "options": [
+      "`env` with `configMapKeyRef`",
+      "A `configMap` volume mounted as a directory",
+      "A single key mounted with `subPath`",
+      "A `projected` volume that includes the ConfigMap, mounted as a directory"
+    ],
+    "answer": [
+      1,
+      3
+    ],
+    "explain": "Directory mounts of `configMap`, `secret` and `projected` volumes are updated by the kubelet (with a delay). Env vars and `subPath` mounts are fixed for the life of the container."
+  },
+  {
+    "type": "single",
+    "q": "A pod is stuck in `CreateContainerConfigError`. What is the most likely cause?",
+    "options": [
+      "The image cannot be pulled",
+      "The node is out of memory",
+      "The container exits with code 1",
+      "A referenced ConfigMap/Secret or key does not exist in the pod's namespace"
+    ],
+    "answer": 3,
+    "explain": "The kubelet cannot build the container config because a referenced ConfigMap, Secret or key is missing (and not marked `optional: true`). `kubectl describe pod` names it. Image problems show `ImagePullBackOff`; a crashing process shows `CrashLoopBackOff`."
+  },
+  {
+    "type": "single",
+    "q": "A teammate says: \"Our Secrets are safe because they are base64-encoded.\" What is the correct response?",
+    "options": [
+      "Correct, base64 with a cluster key is encryption",
+      "Base64 is only an encoding; protection comes from RBAC, encryption at rest, limiting who can create pods, and keeping Secrets out of Git",
+      "Correct, as long as the Secret type is `Opaque`",
+      "Base64 is safe if the Secret is marked `immutable`"
+    ],
+    "answer": 1,
+    "explain": "`base64 -d` reverses it instantly. Real controls: least-privilege RBAC, encryption at rest (KMS), restricting workload creation, node security, and an external secret store or encrypted-in-Git workflow."
+  },
+  {
+    "type": "single",
+    "q": "A ServiceAccount has no permissions on `secrets`, but can `create` pods and `get pods/log` in namespace `shop`. What can it do?",
+    "options": [
+      "Nothing involving Secrets",
+      "List Secret names but not values",
+      "Read any Secret in `shop` by creating a pod that mounts it and printing it",
+      "Read Secrets in all namespaces"
+    ],
+    "answer": 2,
+    "explain": "Pod creation implies access to every Secret in the namespace, because a pod can mount any of them. This is why who-can-create-workloads matters as much as RBAC on `secrets`, and why admission policies exist."
+  },
+  {
+    "type": "multi",
+    "q": "Which RBAC verbs on `secrets` reveal Secret **values**? (select all)",
+    "options": [
+      "`get`",
+      "`list`",
+      "`watch`",
+      "`create`"
+    ],
+    "answer": [
+      0,
+      1,
+      2
+    ],
+    "explain": "`list` and `watch` return full objects, including `data`, for every Secret in scope. Treat them as sensitive as `get`. `create` alone does not reveal existing values."
+  },
+  {
+    "type": "single",
+    "q": "In an `EncryptionConfiguration`, the providers list for secrets is `[identity, aescbc]`. What happens to newly written Secrets?",
+    "options": [
+      "They are stored unencrypted, because the first provider is used for writes",
+      "They are encrypted with aescbc",
+      "They are encrypted twice",
+      "The API server refuses to start"
+    ],
+    "answer": 0,
+    "explain": "The first provider encrypts new writes; all providers are tried on reads. Putting `identity` first means plain text. Encryption providers must come first, with `identity` last as a fallback for old data."
+  },
+  {
+    "type": "single",
+    "q": "You enabled encryption at rest. Existing Secrets created earlier are still plain text in etcd. How do you fix that?",
+    "options": [
+      "Restart etcd",
+      "Delete the `identity` provider; etcd converts them",
+      "They are re-encrypted automatically within 24 hours",
+      "Rewrite them through the API, for example `kubectl get secrets -A -o json | kubectl replace -f -`"
+    ],
+    "answer": 3,
+    "explain": "Data is encrypted when written. Existing objects are only re-encrypted when the API server writes them again, so you rewrite all Secrets after enabling (or rotating) a key."
+  },
+  {
+    "type": "single",
+    "q": "You use Kustomize `configMapGenerator`, change a value, `kubectl apply -k .`, then `kubectl rollout undo` the Deployment. Which config do the pods use after the undo?",
+    "options": [
+      "The new config, since ConfigMaps are not versioned",
+      "The old config, because the previous pod template references the old hash-named ConfigMap, which still exists",
+      "No config; the old ConfigMap was deleted",
+      "It depends on the kubelet cache"
+    ],
+    "answer": 1,
+    "explain": "The generator creates `shipit-config-<hash>` per content version and rewrites references. Rolling back the template points at the old name, so config rolls back with the code. Editing a ConfigMap in place cannot give you that."
+  },
+  {
+    "type": "single",
+    "q": "What does `kubectl rollout restart deployment/shipit-api` actually change?",
+    "options": [
+      "It adds a `kubectl.kubernetes.io/restartedAt` annotation to the pod template, triggering a normal rolling update",
+      "It deletes all pods at once",
+      "It restarts containers in place without creating new pods",
+      "It reloads ConfigMaps into running containers"
+    ],
+    "answer": 0,
+    "explain": "Any pod template change creates a new ReplicaSet. `rollout restart` makes a harmless annotation change so the Deployment's rolling-update strategy (maxSurge/maxUnavailable) replaces pods gradually."
+  },
+  {
+    "type": "multi",
+    "q": "Your team runs on EKS and keeps secrets in AWS Secrets Manager. Which tools can deliver them to pods without committing secret values to Git? (select all)",
+    "options": [
+      "External Secrets Operator syncing into Kubernetes Secrets",
+      "Secrets Store CSI Driver with the AWS provider mounting them as files",
+      "Committing base64-encoded Secret manifests to a private repo",
+      "Sealed Secrets, which encrypts Secrets for the cluster so the encrypted form can live in Git"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "ESO and the CSI driver read from Secrets Manager directly. Sealed Secrets stores only ciphertext in Git (though its source of truth is Git, not Secrets Manager). Base64 manifests in Git are plain secrets, private repo or not."
+  },
+  {
+    "type": "single",
+    "q": "`kubectl apply` fails with `cannot unmarshal bool into Go struct field ConfigMap.data of type string`. What is wrong?",
+    "options": [
+      "The ConfigMap is larger than 1 MiB",
+      "Boolean keys must go in `binaryData`",
+      "A value like `ENABLE_CACHE: true` is unquoted YAML; ConfigMap data values must be strings",
+      "ConfigMaps cannot contain feature flags"
+    ],
+    "answer": 2,
+    "explain": "YAML parses `true`, `3000` and `on` as non-strings. Quote them (`\"true\"`, `\"3000\"`). Your app parses them back from strings."
+  },
+  {
+    "type": "single",
+    "q": "Why might you mount a database password as a file from a Secret volume instead of an env var?",
+    "options": [
+      "Files are encrypted by the kubelet",
+      "Secret volumes do not count against the 1 MiB limit",
+      "Env vars cannot hold more than 64 characters",
+      "Env vars leak more easily (crash reports, child processes, `/proc/<pid>/environ`), and mounted files can be rotated without a restart if the app re-reads them"
+    ],
+    "answer": 3,
+    "explain": "Secret volumes live in tmpfs and are refreshed on change. Env vars are copied into process memory and inherited by children, and often end up in diagnostics. Both are valid; files are slightly safer for high-value credentials."
+  }
+]

@@ -1,0 +1,17 @@
+[
+  { "front": "Parts of an image reference", "back": "`registry/namespace/repository:tag@digest`, e.g. `ghcr.io/acme/api:1.2.0@sha256:...`. Defaults: `docker.io`, `library`, `latest`." },
+  { "front": "Tag vs digest", "back": "A tag is a mutable pointer anyone with push rights can move. A digest (`sha256:...`) is the content hash of a manifest/index — immutable." },
+  { "front": "Log in to ECR", "back": "`aws ecr get-login-password --region <r> | docker login --username AWS --password-stdin <acct>.dkr.ecr.<r>.amazonaws.com` (token valid 12 h; the repository must exist)." },
+  { "front": "What is the build context?", "back": "The files sent to the builder (the directory passed to `docker build`, minus `.dockerignore`). `COPY` can only read from it." },
+  { "front": "Two reasons for `.dockerignore`", "back": "Speed (small context, fewer cache busts) and safety/correctness (no `.env`, `.git` or host `node_modules` with wrong-platform binaries in the image)." },
+  { "front": "Shell form vs exec form", "back": "Exec `CMD [\"node\",\"app.js\"]` runs the binary directly (gets signals, no shell needed, no `$VAR` expansion). Shell `CMD node app.js` runs `/bin/sh -c ...`." },
+  { "front": "ENTRYPOINT + CMD rules", "back": "Final command = ENTRYPOINT + CMD. `docker run img args` replaces CMD; `--entrypoint` replaces ENTRYPOINT (and clears CMD)." },
+  { "front": "What must an entrypoint script end with?", "back": "`exec \"$@\"` — so the CMD replaces the shell as PID 1 and receives signals." },
+  { "front": "ARG vs ENV", "back": "ARG: build-time only (`--build-arg`), recorded in history when used by RUN, scoped to a stage. ENV: build and runtime, stored in the image config. Neither is for secrets." },
+  { "front": "Build cache key, roughly", "back": "Parent layer + instruction text (+ build args used); for COPY/ADD also file content checksums (not mtimes). After the first miss, all later steps in the stage rebuild." },
+  { "front": "Cache-friendly Node Dockerfile order", "back": "`COPY package.json package-lock.json ./` → `RUN npm ci` → `COPY` source → `RUN npm run build`. Dependencies stay cached while source changes." },
+  { "front": "Why combine `apt-get update` and `install` in one RUN?", "back": "A separately cached `update` layer keeps stale package lists, so later installs fail or get old versions. Also delete `/var/lib/apt/lists/*` in the same RUN." },
+  { "front": "COPY vs ADD", "back": "Use COPY by default. ADD also fetches URLs (use `--checksum`), clones git repos and auto-extracts local tar archives — use it only on purpose." },
+  { "front": "`npm ci` vs `npm install` in images", "back": "`npm ci` installs exactly the lockfile, fails if it's out of sync with package.json, and starts from a clean `node_modules` — reproducible builds." },
+  { "front": "Tools to see what's inside an image", "back": "`docker history` (layers, sizes, instructions), `docker image inspect` (config, digests), `dive` (per-layer files, wasted space; `dive --ci` in pipelines)." }
+]

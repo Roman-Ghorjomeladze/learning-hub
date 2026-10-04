@@ -1,0 +1,170 @@
+[
+  {
+    "type": "single",
+    "q": "What is the fully qualified form of the image reference `postgres:17-alpine`?",
+    "options": [
+      "`registry.hub.docker.com/postgres:17-alpine`",
+      "`library.docker.io/postgres:17-alpine@latest`",
+      "`docker.io/postgres/postgres:17-alpine`",
+      "`docker.io/library/postgres:17-alpine`"
+    ],
+    "answer": 3,
+    "explain": "Without a registry hostname, Docker uses `docker.io`; official images live in the `library` namespace. The tag defaults to `latest` only when omitted."
+  },
+  {
+    "type": "single",
+    "q": "Production broke after a redeploy although nobody changed the Dockerfile: the base `node:22` now contains a newer Node patch with a regression. What prevents this class of problem?",
+    "options": [
+      "Using `node:latest` instead of `node:22`",
+      "Running `docker build --no-cache`",
+      "Pinning the base image by digest (e.g. `FROM node:22-bookworm-slim@sha256:...`) and updating it deliberately",
+      "Adding `--pull` to every build"
+    ],
+    "answer": 2,
+    "explain": "Tags are mutable; a digest identifies exact content. Pin digests and update them on purpose (Renovate/Dependabot can automate PRs). `--pull` and `--no-cache` make builds *more* likely to pick up new upstream content."
+  },
+  {
+    "type": "single",
+    "q": "In this Dockerfile, which instructions re-run after you change only `src/app.ts`?\n\n```dockerfile\nFROM node:22-slim\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci\nCOPY . .\nRUN npm run build\n```",
+    "options": [
+      "All of them",
+      "`COPY . .` and `RUN npm run build`",
+      "`RUN npm ci`, `COPY . .`, `RUN npm run build`",
+      "Only `RUN npm run build`"
+    ],
+    "answer": 1,
+    "explain": "The manifests didn't change, so their COPY and `npm ci` stay cached. `COPY . .` includes the changed file, so it and every later step rebuild."
+  },
+  {
+    "type": "multi",
+    "q": "Why should `node_modules` be listed in `.dockerignore` for a Node project? (select all)",
+    "options": [
+      "Host-installed native modules may be built for macOS/arm64 and break in a Linux container",
+      "Docker cannot copy directories named node_modules",
+      "It can make the build context huge and slow",
+      "Dependencies should be installed reproducibly inside the build with `npm ci`"
+    ],
+    "answer": [
+      0,
+      2,
+      3
+    ],
+    "explain": "Copying host dependencies is non-reproducible and can bring wrong-platform binaries (bcrypt, sharp, esbuild). It also bloats the context. Docker can copy it — that's exactly the problem."
+  },
+  {
+    "type": "single",
+    "q": "An image has `ENTRYPOINT [\"node\"]` and `CMD [\"server.js\"]`. What runs with `docker run img --inspect=0.0.0.0 server.js`?",
+    "options": [
+      "`--inspect=0.0.0.0 server.js` (fails)",
+      "`node server.js`",
+      "`node server.js --inspect=0.0.0.0 server.js`",
+      "`node --inspect=0.0.0.0 server.js`"
+    ],
+    "answer": 3,
+    "explain": "Arguments after the image name replace CMD and are appended to ENTRYPOINT. Only `--entrypoint` replaces the ENTRYPOINT."
+  },
+  {
+    "type": "single",
+    "q": "A Dockerfile ends with `CMD node dist/index.js`. What is the main runtime consequence?",
+    "options": [
+      "The command runs via `/bin/sh -c`, so the shell may be PID 1 and SIGTERM may not reach node, breaking graceful shutdown",
+      "The build fails because the command isn't JSON",
+      "Environment variables are unavailable to node",
+      "The image cannot be run on arm64"
+    ],
+    "answer": 0,
+    "explain": "Shell form wraps the command in `/bin/sh -c`. Use exec form `CMD [\"node\", \"dist/index.js\"]` so node receives signals directly, and so the image works without a shell (distroless)."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about `ARG` and `ENV` are correct? (select all)",
+    "options": [
+      "An `ARG` declared before `FROM` must be re-declared after `FROM` to be used in that stage's instructions",
+      "`ENV` values persist in the image config and are visible at runtime",
+      "`ARG` values are not present in the running container's environment",
+      "`ARG` is a safe way to pass an npm token because it isn't kept in the image"
+    ],
+    "answer": [
+      0,
+      1,
+      2
+    ],
+    "explain": "ARG values used in RUN are recorded in `docker history`, so they are not safe for secrets — use `RUN --mount=type=secret`. Pre-FROM ARGs are only in scope for FROM lines unless re-declared."
+  },
+  {
+    "type": "single",
+    "q": "A colleague's Dockerfile has `RUN apt-get update` on one line and `RUN apt-get install -y libpq5` on the next. Months later, adding another package fails with 404 errors from the Debian mirror. Why?",
+    "options": [
+      "Debian removed apt-get",
+      "The base image must be re-tagged",
+      "BuildKit doesn't support apt",
+      "The cached `apt-get update` layer holds stale package lists; the new install step uses them"
+    ],
+    "answer": 3,
+    "explain": "The update step's cache key didn't change, so it was reused with months-old indexes pointing at package versions that no longer exist. Combine update, install and cleanup in a single `RUN`."
+  },
+  {
+    "type": "single",
+    "q": "Your image is 900 MB. `docker history` shows `RUN rm -rf /tmp/build-cache` with size 0B after a 600 MB layer that created that directory. What's the fix?",
+    "options": [
+      "Create and delete the files in the same `RUN` (or produce them in a separate build stage and copy only the result)",
+      "Run `docker image prune`",
+      "Move the `rm` to the top of the Dockerfile",
+      "Use `ADD` instead of `COPY`"
+    ],
+    "answer": 0,
+    "explain": "A later layer can only hide files with whiteouts; the bytes stay in the earlier layer. Clean up in the same layer, or use multi-stage builds so the cache never enters the final image."
+  },
+  {
+    "type": "single",
+    "q": "You push `ghcr.io/acme/api:1.2.0` and then tag the same image as `ghcr.io/acme/api:sha-4e1f9c2` and push again. What does the second push upload?",
+    "options": [
+      "All layers again, because the tag is new",
+      "Nothing — pushing a second tag is not allowed",
+      "Only the manifest reference; all layers already exist in the repository",
+      "A compressed copy of the first tag"
+    ],
+    "answer": 2,
+    "explain": "Registries are content-addressed. Layer blobs with the same digest are already there (`Layer already exists`); the new tag just points at the same manifest."
+  },
+  {
+    "type": "single",
+    "q": "Which `.dockerignore` mistake leaks secrets most often?",
+    "options": [
+      "Ignoring `Dockerfile`",
+      "Ignoring `dist`",
+      "Not ignoring `.env`/credential files while using `COPY . .`",
+      "Ignoring `*.md`"
+    ],
+    "answer": 2,
+    "explain": "`COPY . .` copies everything in the context that isn't ignored. A local `.env` then lives in a layer that anyone with pull access can read. Prefer explicit COPY allow-lists plus a `.dockerignore` safety net."
+  },
+  {
+    "type": "multi",
+    "q": "Which tools or commands help you understand what is inside an image and where its size comes from? (select all)",
+    "options": [
+      "`dive`",
+      "`docker port`",
+      "`docker image inspect`",
+      "`docker history`"
+    ],
+    "answer": [
+      0,
+      2,
+      3
+    ],
+    "explain": "`history` lists layers and sizes, `dive` explores each layer's files and wasted space, `image inspect` shows config and layer digests. `docker port` shows port mappings of a container."
+  },
+  {
+    "type": "single",
+    "q": "What does `docker init` generate for a Node project?",
+    "options": [
+      "A `Dockerfile`, `compose.yaml`, `.dockerignore` and `README.Docker.md`, based on your answers to a few questions",
+      "Only a `package.json`",
+      "A Kubernetes Deployment and Service",
+      "A GitHub Actions workflow that pushes to Docker Hub"
+    ],
+    "answer": 0,
+    "explain": "`docker init` scaffolds container files using best practices (multi-stage, cache mounts, non-root user). Review and adapt them; it doesn't know your app's dependencies or health endpoints."
+  }
+]

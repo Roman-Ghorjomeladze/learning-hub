@@ -1,0 +1,17 @@
+[
+  { "front": "The five-step Kubernetes troubleshooting flow", "back": "`get` (state) → `describe` (conditions, last state, events) → `events` (sorted, warnings) → `logs` (`--previous` for crashes) → `exec`/`debug` (look from inside)." },
+  { "front": "No pods exist for a Deployment. Where do you look?", "back": "One level up: `kubectl describe rs -l app=...`. Quota, Pod Security and webhook rejections are events on the ReplicaSet." },
+  { "front": "`Pending` usually means…", "back": "The scheduler cannot place the pod: insufficient requested CPU/memory, affinity/nodeSelector mismatch, taints, or an unbound PVC. Read `FailedScheduling` events." },
+  { "front": "`ImagePullBackOff` causes", "back": "Wrong image name or tag, private registry without imagePullSecrets, no image for the node's architecture (arm64 vs amd64), registry rate limits." },
+  { "front": "`CreateContainerConfigError` causes", "back": "Missing ConfigMap/Secret or a missing key in one, or `runAsNonRoot` with a root or non-numeric image user." },
+  { "front": "Exit codes 1, 127, 137, 143", "back": "1 = app error; 127 = command not found; 137 = SIGKILL (OOM or grace period expired); 143 = SIGTERM (graceful stop)." },
+  { "front": "OOMKilled vs Evicted", "back": "OOMKilled: the container exceeded its own memory limit (kernel kill, restarted in place). Evicted: the node is under pressure (or a storage limit was exceeded) and the kubelet removes the pod; a controller replaces it." },
+  { "front": "Why is an object stuck in Terminating?", "back": "`metadata.finalizers` is not empty (its controller has not finished or is gone), or a pod is waiting out its grace period, or its node is unreachable." },
+  { "front": "Service-not-reachable checklist", "back": "DNS resolves? Service port right? EndpointSlice has endpoints (selector matches, pods ready)? targetPort matches container port? App listens on 0.0.0.0? NetworkPolicy allows?" },
+  { "front": "Command: see a Service's backing endpoints", "back": "`kubectl get endpointslices -l kubernetes.io/service-name=<svc> -o wide` (check `conditions.ready`)." },
+  { "front": "Three modes of `kubectl debug`", "back": "Ephemeral container in a running pod (`--image ... --target=c`), copy of a pod with changes (`--copy-to`, `--set-image`, `-- sh`), node session (`kubectl debug node/<n>`, host fs at /host)." },
+  { "front": "metrics-server vs Prometheus", "back": "metrics-server: latest CPU/memory only, for `kubectl top` and HPA. Prometheus: scrapes any `/metrics`, stores history, PromQL, alert rules." },
+  { "front": "What does kube-state-metrics provide?", "back": "Metrics about object state from the API (restarts, replicas available, pod phases, resource requests/limits), e.g. `kube_pod_container_status_restarts_total`." },
+  { "front": "RED vs USE", "back": "RED for services: Rate, Errors, Duration. USE for resources: Utilisation, Saturation, Errors." },
+  { "front": "OpenTelemetry Collector's role", "back": "Receives telemetry (OTLP from SDKs), processes it (batch, k8s metadata, sampling) and exports to backends like Tempo/Jaeger, Prometheus, Loki or a vendor." }
+]

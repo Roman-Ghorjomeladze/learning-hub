@@ -1,0 +1,17 @@
+[
+  { "front": "Managed Kubernetes: provider vs you", "back": "Provider: control plane, etcd, HA, cert rotation. You: when to upgrade, nodes and add-ons, networking design, IAM/RBAC, workloads, observability, backups, cost." },
+  { "front": "EKS VPC CNI in one sentence (and its main risk)", "back": "Pods get real VPC IPs from your subnets; the risk is IP exhaustion, mitigated with bigger/secondary CIDRs, prefix delegation or IPv6." },
+  { "front": "EKS compute options", "back": "Managed node groups (default), self-managed nodes, Fargate (pod per micro-VM, no DaemonSets), Karpenter (just-in-time right-sized nodes, consolidation), EKS Auto Mode (AWS-managed compute and core add-ons)." },
+  { "front": "EKS: how do IAM principals get cluster access today?", "back": "Access entries (EKS API) with access policies or Kubernetes groups bound via RBAC. The `aws-auth` ConfigMap is the deprecated older method." },
+  { "front": "Version skew essentials", "back": "Control plane upgrades one minor at a time. kubelet never newer than the API server, up to 3 minors older. kubectl within ±1 minor." },
+  { "front": "Node replacement sequence during upgrades", "back": "`kubectl cordon` → `kubectl drain --ignore-daemonsets --delete-emptydir-data` (respects PDBs) → replace/upgrade → `kubectl uncordon`." },
+  { "front": "PDB setting that never blocks drains (with ≥2 replicas)", "back": "`maxUnavailable: 1`, with replicas spread across nodes and readiness probes so replacements count as available." },
+  { "front": "ResourceQuota vs LimitRange", "back": "ResourceQuota caps namespace totals (CPU/memory requests and limits, pods, LoadBalancers, storage). LimitRange sets per-container defaults, minimums and maximums." },
+  { "front": "Biggest Kubernetes cost lever", "back": "Right-sizing requests: nodes are bin-packed and autoscaled by requests, not by actual usage." },
+  { "front": "What does Velero back up?", "back": "Kubernetes API objects (to object storage) and persistent volumes (CSI snapshots or file-system backup). Databases still need database-native backups." },
+  { "front": "CRD essentials", "back": "Group, names (kind, plural, shortNames), scope, versions (one storage version), structural OpenAPI schema with defaults and CEL rules, status subresource, printer columns." },
+  { "front": "Operator pattern", "back": "Custom resource (desired state) + controller that reconciles it, encoding operational knowledge (e.g. CloudNativePG failover, cert-manager renewals)." },
+  { "front": "Why do controllers set ownerReferences?", "back": "So the garbage collector deletes owned objects when the owner (e.g. the custom resource) is deleted, and so watches can map child changes back to the owner." },
+  { "front": "Tools for building operators", "back": "Kubebuilder (Go, controller-runtime), Operator SDK (Go/Helm/Ansible, OLM), kopf (Python), Java Operator SDK, @kubernetes/client-node for TypeScript." },
+  { "front": "CKAD vs CKA vs CKS", "back": "All hands-on, 2 hours, docs allowed. CKAD: building/deploying apps. CKA: cluster admin, upgrades, etcd, troubleshooting. CKS: security; requires CKA." }
+]

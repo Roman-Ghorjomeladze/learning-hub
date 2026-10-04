@@ -1,0 +1,157 @@
+[
+  {
+    "type": "single",
+    "q": "You built `myapp` (no tag) on your Mac, ran `kind load docker-image myapp`, and deployed `image: myapp`. Pods show `ImagePullBackOff`. `crictl images` on the node lists the image. What is the cause?",
+    "options": [
+      "kind load only copies to the control-plane node",
+      "Images loaded with kind expire after 5 minutes",
+      "The pod needs an imagePullSecret for local images",
+      "No tag means `:latest`, whose default `imagePullPolicy` is `Always`, so the kubelet tries Docker Hub"
+    ],
+    "answer": 3,
+    "explain": "For `:latest` or untagged images the default policy is `Always`. Use an explicit tag such as `myapp:0.1.0` (default `IfNotPresent`) or set `imagePullPolicy: IfNotPresent`/`Never`. kind load copies to all nodes by default."
+  },
+  {
+    "type": "single",
+    "q": "You want `curl localhost:30080` on your Mac to reach a NodePort Service in kind. What do you need?",
+    "options": [
+      "`kubectl proxy --port=30080`",
+      "An `extraPortMappings` entry mapping containerPort 30080 to hostPort 30080 when the cluster is created",
+      "Nothing: NodePorts are always reachable on localhost",
+      "A LoadBalancer Service"
+    ],
+    "answer": 1,
+    "explain": "kind nodes are containers inside Docker's VM; their ports are not reachable from macOS unless published. `extraPortMappings` publishes a node port at cluster creation (it cannot be added later)."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about kubeconfig are correct? (select all)",
+    "options": [
+      "A context combines a cluster, a user and optionally a default namespace",
+      "`KUBECONFIG` can list several files that kubectl merges",
+      "The default namespace is stored on the cluster entry",
+      "`kubectl --context X` overrides the current context for one command"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "The namespace belongs to the context, not the cluster, so two contexts for the same cluster can default to different namespaces. Multiple files merge, and `--context` is the safest way to target a cluster in scripts."
+  },
+  {
+    "type": "single",
+    "q": "What is the difference between `--dry-run=client` and `--dry-run=server`?",
+    "options": [
+      "`client` builds the object locally; `server` sends it through authentication, admission, validation and defaulting without persisting",
+      "There is none; `server` is an alias",
+      "`server` persists the object but marks it inactive",
+      "`client` validates against the cluster's OpenAPI schema; `server` does not"
+    ],
+    "answer": 0,
+    "explain": "Client dry run is ideal for generating YAML. Server dry run catches errors that only the API server knows about: admission webhooks, policy, immutable fields, quota and defaults."
+  },
+  {
+    "type": "single",
+    "q": "`kubectl diff -f k8s/` exits with code 1. What does that mean?",
+    "options": [
+      "An error occurred contacting the cluster",
+      "The files are invalid YAML",
+      "The files differ from the live objects; applying would change something",
+      "Some objects in the files do not exist yet and diff cannot handle them"
+    ],
+    "answer": 2,
+    "explain": "Exit code 0 means no differences, 1 means differences were found, and greater than 1 means kubectl or diff failed. This makes it useful in CI for drift detection."
+  },
+  {
+    "type": "single",
+    "q": "A teammate fixed a production issue by running `kubectl edit deploy api` and changing an env var. The next CI deploy runs `kubectl apply -f k8s/`. What happens to the fix if the file still has the old value?",
+    "options": [
+      "Apply detects the manual edit and refuses to run",
+      "The file's value wins and the fix is reverted",
+      "The live value wins because it is newer",
+      "Apply merges both values into a list"
+    ],
+    "answer": 1,
+    "explain": "Apply makes the object match the file for every field the file sets. Live edits survive only for fields the file does not manage. Every live change must also land in git."
+  },
+  {
+    "type": "single",
+    "q": "Which command prints each pod name and its node, one pair per line?",
+    "options": [
+      "`kubectl get pods -o jsonpath='{.items[*].metadata.name}{.items[*].spec.nodeName}'`",
+      "`kubectl get pods -o name,node`",
+      "`kubectl get pods --columns=name,nodeName`",
+      "`kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{\"\\t\"}{.spec.nodeName}{\"\\n\"}{end}'`"
+    ],
+    "answer": 3,
+    "explain": "`range ... end` iterates over items so fields from the same pod stay together. Using `{.items[*].metadata.name}{.items[*].spec.nodeName}` would print all names followed by all node names. `-o custom-columns=NAME:.metadata.name,NODE:.spec.nodeName` would also work."
+  },
+  {
+    "type": "single",
+    "q": "A pod is in `CrashLoopBackOff`. `kubectl logs mypod` shows nothing useful because the container just restarted. What do you run next?",
+    "options": [
+      "`kubectl logs mypod -f --since=0`",
+      "`kubectl exec mypod -- cat /var/log/app.log`",
+      "`kubectl logs mypod --previous`",
+      "`kubectl top pod mypod`"
+    ],
+    "answer": 2,
+    "explain": "`--previous` (`-p`) prints the logs of the last terminated instance of the container, which usually contains the crash reason. Exec is often impossible because the container keeps dying."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about `kubectl port-forward svc/api 8080:80` are true? (select all)",
+    "options": [
+      "It tunnels through the API server and kubelet to a single pod",
+      "It load-balances each request across all pods behind the Service",
+      "It stops working if that pod is deleted",
+      "It is suitable for exposing services to real users"
+    ],
+    "answer": [
+      0,
+      2
+    ],
+    "explain": "port-forward resolves the Service to one backing pod and tunnels to it. It does not load-balance and breaks when the pod goes away. It is a debugging tool, not an exposure mechanism."
+  },
+  {
+    "type": "single",
+    "q": "Which patch type replaces the whole `containers` list rather than merging entries by name?",
+    "options": [
+      "JSON merge patch (`--type merge`)",
+      "Strategic merge patch (the default for built-in types)",
+      "Server-side apply",
+      "None; all patches merge lists by name"
+    ],
+    "answer": 0,
+    "explain": "JSON merge patch (RFC 7386) replaces lists wholesale. Strategic merge patch knows that `containers` is keyed by `name` and merges entries. JSON patch (`--type json`) applies explicit operations at paths."
+  },
+  {
+    "type": "single",
+    "q": "`kubectl top pods` returns `error: Metrics API not available` on a fresh kind cluster. Why?",
+    "options": [
+      "kind does not support cgroups",
+      "You must enable `--metrics` on kubectl",
+      "Metrics are only collected for Deployments",
+      "metrics-server is not installed by default"
+    ],
+    "answer": 3,
+    "explain": "`kubectl top` reads the `metrics.k8s.io` API served by metrics-server. Install it (with `--kubelet-insecure-tls` on kind because kubelet certificates are self-signed)."
+  },
+  {
+    "type": "multi",
+    "q": "Which are good habits when working with multiple clusters? (select all)",
+    "options": [
+      "Show the current context and namespace in your shell prompt",
+      "Use `--context` explicitly in scripts",
+      "Keep everything in the `default` namespace to avoid confusion",
+      "Keep sensitive cluster credentials in separate kubeconfig files and add them to `KUBECONFIG` only when needed"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "The classic disaster is running a destructive command against the wrong cluster. Visible context, explicit targeting and separated credentials reduce that risk. Using `default` for everything removes a useful layer of scoping."
+  }
+]

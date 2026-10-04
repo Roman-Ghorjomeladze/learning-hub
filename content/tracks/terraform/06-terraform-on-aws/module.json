@@ -1,0 +1,26 @@
+{
+  "title": "Terraform on AWS",
+  "summary": "Configure the AWS provider safely (IAM Identity Center profiles, default_tags, regions and aliases), then build a VPC, security groups, IAM roles, a hardened S3 bucket and an ECS Fargate service, with cost guard rails first and LocalStack as a free alternative for parts of the work.",
+  "level": "intermediate",
+  "estimatedMinutes": 240,
+  "objectives": [
+    "Set up a budget alert and know which AWS resources cost money by the hour before creating anything",
+    "Authenticate Terraform with IAM Identity Center (SSO) profiles and explain why static access keys do not belong in code",
+    "Configure the AWS provider with default_tags, multiple regions via aliases and the v6 per-resource `region` argument",
+    "Design a VPC with public and private subnets using `cidrsubnet`, an internet gateway and route tables, and explain what a NAT gateway costs",
+    "Write least-privilege IAM roles and policies with `aws_iam_policy_document`",
+    "Create an S3 bucket with public access blocked, ownership enforced, encryption, versioning, lifecycle and a TLS-only policy",
+    "Run a container on ECS Fargate from a public registry or ECR and reach it through a security group",
+    "Decide when to use `terraform-aws-modules/vpc` instead of writing networking yourself"
+  ],
+  "resources": [
+    { "title": "AWS provider documentation", "url": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs", "type": "docs", "note": "Authentication, provider arguments, default_tags and every resource." },
+    { "title": "Configuring IAM Identity Center authentication with the AWS CLI", "url": "https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html", "type": "docs", "note": "`aws configure sso`, sso-session sections and `aws sso login`." },
+    { "title": "Get started with Terraform on AWS", "url": "https://developer.hashicorp.com/terraform/tutorials/aws-get-started", "type": "course", "note": "HashiCorp's official AWS tutorial series." },
+    { "title": "terraform-aws-modules/vpc", "url": "https://github.com/terraform-aws-modules/terraform-aws-vpc", "type": "tool", "note": "The community-standard VPC module; read its inputs to see what a full VPC involves." },
+    { "title": "AWS Budgets", "url": "https://docs.aws.amazon.com/cost-management/latest/userguide/budgets-managing-costs.html", "type": "docs", "note": "Cost budgets and alerts. Set one up before anything else." },
+    { "title": "Amazon ECS on AWS Fargate", "url": "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html", "type": "docs", "note": "Task definitions, networking modes and platform versions for Fargate." },
+    { "title": "AWS Pricing Calculator", "url": "https://calculator.aws/", "type": "tool", "note": "Check hourly prices for NAT gateways, Fargate, load balancers and public IPv4 in your region." },
+    { "title": "LocalStack documentation", "url": "https://docs.localstack.cloud/", "type": "docs", "note": "Local AWS emulator; requires a free account and auth token since March 2026." }
+  ]
+}

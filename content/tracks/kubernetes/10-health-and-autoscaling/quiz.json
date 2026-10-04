@@ -1,0 +1,180 @@
+[
+  {
+    "type": "single",
+    "q": "What happens when a pod's readiness probe fails (and its liveness probe passes)?",
+    "options": [
+      "The container is restarted",
+      "The pod is evicted and rescheduled on another node",
+      "The pod is removed from Service endpoints (marked not ready) but keeps running",
+      "The Deployment rolls back"
+    ],
+    "answer": 2,
+    "explain": "Readiness controls traffic only. Proxies stop sending requests to the pod until it passes again. Only liveness (and startup) failures restart containers."
+  },
+  {
+    "type": "single",
+    "q": "Postgres has a 30-second hiccup and every `shipit-api` pod restarts at the same time. What is the most likely misconfiguration?",
+    "options": [
+      "The liveness probe checks the database",
+      "The readiness probe checks the database",
+      "There is no startupProbe",
+      "The HPA scaled down"
+    ],
+    "answer": 0,
+    "explain": "Liveness that depends on a shared dependency fails on all replicas at once and triggers fleet-wide restarts. Keep liveness process-local (`/healthz`); put dependency checks in readiness, if anywhere."
+  },
+  {
+    "type": "single",
+    "q": "An app needs ~60 s to start. Its liveness probe has `initialDelaySeconds: 10`, `periodSeconds: 5`, `failureThreshold: 3`. Logs stop mid-boot and the pod ends in `CrashLoopBackOff`. Best fix?",
+    "options": [
+      "Remove the liveness probe entirely",
+      "Increase the memory limit",
+      "Set `timeoutSeconds: 60` on the liveness probe",
+      "Add a startupProbe (e.g. `periodSeconds: 5`, `failureThreshold: 24`) so liveness only starts after a successful startup"
+    ],
+    "answer": 3,
+    "explain": "Liveness kills it at ~25 s. A startupProbe allows up to `periodSeconds x failureThreshold` for startup while keeping fast liveness detection afterwards."
+  },
+  {
+    "type": "multi",
+    "q": "Which steps help achieve zero failed requests during a rolling update of a Node.js API? (select all)",
+    "options": [
+      "A preStop sleep of a few seconds so routing updates before SIGTERM",
+      "Handling SIGTERM: stop accepting connections, finish in-flight requests, then exit",
+      "`maxUnavailable: 0` with `maxSurge` > 0",
+      "Calling `process.exit(0)` immediately on SIGTERM",
+      "`terminationGracePeriodSeconds` longer than preStop plus drain time"
+    ],
+    "answer": [
+      0,
+      1,
+      2,
+      4
+    ],
+    "explain": "Endpoint removal and SIGTERM happen in parallel, so the preStop delay covers propagation, the SIGTERM handler drains, the rollout keeps capacity, and the grace period prevents SIGKILL. Exiting immediately drops in-flight requests."
+  },
+  {
+    "type": "single",
+    "q": "A Node app's Dockerfile ends with `CMD npm start`. Pods always take the full 30 s to terminate and requests are cut at the end. Why?",
+    "options": [
+      "npm is too slow to start",
+      "npm (or a shell) is PID 1 and does not forward SIGTERM to Node properly, so the process is SIGKILLed after the grace period",
+      "The readiness probe is misconfigured",
+      "Kubernetes does not send SIGTERM to Node processes"
+    ],
+    "answer": 1,
+    "explain": "Use the exec form `CMD [\"node\", \"dist/main.js\"]` and install a SIGTERM handler. Also, Node as PID 1 without a handler ignores SIGTERM."
+  },
+  {
+    "type": "single",
+    "q": "An HPA targets 60% CPU utilisation. There are 4 replicas, each requesting `cpu: 250m`, averaging 225m usage. How many replicas does the HPA want?",
+    "options": [
+      "4",
+      "5",
+      "6",
+      "8"
+    ],
+    "answer": 2,
+    "explain": "Utilisation = 225/250 = 90%. Desired = ceil(4 x 90 / 60) = ceil(6.0) = 6."
+  },
+  {
+    "type": "single",
+    "q": "`kubectl get hpa` shows `TARGETS: <unknown>/60%` forever. What do you check first?",
+    "options": [
+      "Whether metrics-server is running and the pods' containers have CPU requests",
+      "Whether the Deployment has a PodDisruptionBudget",
+      "Whether the Service has endpoints",
+      "Whether `maxReplicas` is too low"
+    ],
+    "answer": 0,
+    "explain": "CPU utilisation needs both a resource metric source (metrics-server) and a CPU request on every container to compute a percentage. `kubectl describe hpa` shows `FailedGetResourceMetric`."
+  },
+  {
+    "type": "single",
+    "q": "After a traffic spike ends, your HPA keeps the extra replicas for about 5 minutes before scaling down. Why?",
+    "options": [
+      "metrics-server only reports every 5 minutes",
+      "Pods must run 5 minutes before they can be deleted",
+      "The default scale-down stabilization window is 300 s: the HPA uses the highest recommendation from that window",
+      "The cluster autoscaler blocks it"
+    ],
+    "answer": 2,
+    "explain": "Scale-down stabilization prevents flapping. Tune `spec.behavior.scaleDown.stabilizationWindowSeconds` and policies if needed. Scale-up has no stabilization by default."
+  },
+  {
+    "type": "single",
+    "q": "Why is memory usually a poor HPA metric for a Node.js API?",
+    "options": [
+      "metrics-server cannot measure memory",
+      "Memory metrics are only available with VPA",
+      "The HPA only supports CPU",
+      "Garbage-collected runtimes rarely release memory after load drops, so the HPA scales up but not back down"
+    ],
+    "answer": 3,
+    "explain": "V8 keeps heap it has grown into. Memory stays high after the spike, so the HPA's memory-based recommendation keeps the replica count up. CPU or request rate tracks load better."
+  },
+  {
+    "type": "single",
+    "q": "Your team wants VPA to right-size requests while the HPA scales on CPU utilisation. What is the safest setup?",
+    "options": [
+      "VPA in `Recreate` mode on CPU and memory plus HPA on CPU",
+      "VPA in `Off` mode (recommendations only), applying its suggestions to requests manually or via review",
+      "Disable the HPA; VPA can add replicas",
+      "Run two HPAs"
+    ],
+    "answer": 1,
+    "explain": "HPA on CPU utilisation and VPA changing CPU requests fight each other. Recommendation-only VPA (or VPA on memory only) avoids the conflict. VPA never changes replica counts."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about Cluster Autoscaler and Karpenter are true? (select all)",
+    "options": [
+      "Both react to Pending pods that cannot be scheduled",
+      "Karpenter launches individual instances chosen from many types, rather than resizing fixed node groups",
+      "Both decide based on actual CPU usage, ignoring requests",
+      "Both remove nodes by draining them, which respects PodDisruptionBudgets"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "Node autoscalers work from requests (what the scheduler sees), not usage. CA scales node groups/ASGs; Karpenter provisions right-sized instances and consolidates. Scale-down uses evictions that honour PDBs."
+  },
+  {
+    "type": "single",
+    "q": "A BullMQ worker Deployment should run 0 pods when its Redis queue is empty and scale up with queue depth. Which tool fits best?",
+    "options": [
+      "HPA on CPU with `minReplicas: 0`",
+      "VPA in `Auto` mode",
+      "KEDA ScaledObject with a Redis list trigger and `minReplicaCount: 0`",
+      "A CronJob that scales the Deployment"
+    ],
+    "answer": 2,
+    "explain": "KEDA activates the workload from 0 to 1 when the trigger reports work and manages an HPA for 1 to N using the queue length as an external metric, then returns to 0 after the cooldown."
+  },
+  {
+    "type": "single",
+    "q": "Why run k6 as a Job inside a kind cluster instead of through `kubectl port-forward` from your Mac?",
+    "options": [
+      "`port-forward` tunnels through the API server and becomes the bottleneck, so you measure the tunnel instead of the app",
+      "k6 does not run on macOS",
+      "Jobs get higher priority",
+      "The HPA ignores external traffic"
+    ],
+    "answer": 0,
+    "explain": "port-forward is a debugging tunnel with limited throughput. In-cluster load goes through the Service like real traffic and lets the app, not the tunnel, saturate."
+  },
+  {
+    "type": "single",
+    "q": "Which probe type should you prefer for a gRPC service on a modern cluster?",
+    "options": [
+      "`exec` running `grpc_health_probe` in every container",
+      "`httpGet` on port 50051",
+      "`tcpSocket`, since gRPC cannot be probed",
+      "The native `grpc` probe, which calls the standard gRPC health checking service"
+    ],
+    "answer": 3,
+    "explain": "Native gRPC probes (GA since 1.27) avoid shipping an extra binary and forking processes. `tcpSocket` only proves the port is open, not that the service is serving."
+  }
+]

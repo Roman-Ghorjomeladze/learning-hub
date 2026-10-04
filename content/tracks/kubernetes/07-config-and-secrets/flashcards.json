@@ -1,0 +1,17 @@
+[
+  { "front": "Four ways to consume a ConfigMap", "back": "`env` + `configMapKeyRef` (one key), `envFrom` + `configMapRef` (all keys), `configMap` volume (keys as files), volume + `subPath` (one file)." },
+  { "front": "Which ConfigMap/Secret consumption methods update in running containers?", "back": "Only directory volume mounts (`configMap`, `secret`, `projected`), after a delay. Env vars and `subPath` mounts never update; they need a container restart." },
+  { "front": "Size limit of a ConfigMap or Secret", "back": "1 MiB. They are stored in etcd and meant for config, not files or blobs." },
+  { "front": "Idempotent way to update a ConfigMap from literals or files", "back": "`kubectl create configmap NAME --from-... --dry-run=client -o yaml | kubectl apply -f -`" },
+  { "front": "What does `immutable: true` do on a ConfigMap/Secret?", "back": "Data can no longer be changed (only delete/recreate). Prevents accidental edits and lets the kubelet stop watching it. Pair with versioned or hash names." },
+  { "front": "Common Secret types", "back": "`Opaque`, `kubernetes.io/tls` (tls.crt, tls.key), `kubernetes.io/dockerconfigjson` (image pulls), `kubernetes.io/basic-auth`, `kubernetes.io/ssh-auth`, `kubernetes.io/service-account-token` (legacy)." },
+  { "front": "Is a Kubernetes Secret encrypted?", "back": "Not by default: `data` is base64 and etcd stores it in plain text unless encryption at rest is configured. EKS envelope-encrypts API data with KMS by default on 1.28+." },
+  { "front": "EncryptionConfiguration provider order", "back": "The first provider encrypts writes; all are tried for reads. Put `kms`/`aescbc` first and `identity` last. Rewrite existing Secrets after enabling or rotating keys." },
+  { "front": "Two ways to read a Secret without `get secrets` RBAC", "back": "`list`/`watch` on secrets (returns full objects), or permission to create pods in the namespace (mount the Secret and print it)." },
+  { "front": "Audit what a ServiceAccount can do", "back": "`kubectl auth can-i <verb> <resource> -n <ns> --as=system:serviceaccount:<ns>:<name>` (add `--list` to see everything)." },
+  { "front": "What is a projected volume?", "back": "One volume combining several sources in a directory: `configMap`, `secret`, `downwardAPI` and `serviceAccountToken` (short-lived, audience-bound tokens used by IRSA and Vault)." },
+  { "front": "Three ways to roll pods when config changes", "back": "`kubectl rollout restart`; a `checksum/config` annotation in the pod template (Helm); hash-suffixed ConfigMap names via Kustomize `configMapGenerator`. Reloader automates it for externally changed Secrets." },
+  { "front": "12-factor config rules for a Node/NestJS service", "back": "Read config from env (or files), validate at startup and exit with a clear error, no environment names in code, never log secret values. Use `@nestjs/config` with a schema." },
+  { "front": "External Secrets Operator vs Sealed Secrets", "back": "ESO syncs from an external store (AWS Secrets Manager, Vault...) into Kubernetes Secrets. Sealed Secrets lets you commit ciphertext to Git that only the in-cluster controller can decrypt." },
+  { "front": "Secrets Store CSI Driver", "back": "Mounts secrets from an external store (e.g. AWS Secrets Manager via ASCP) directly into pods as files through a CSI volume and `SecretProviderClass`; syncing to a Kubernetes Secret is optional." }
+]

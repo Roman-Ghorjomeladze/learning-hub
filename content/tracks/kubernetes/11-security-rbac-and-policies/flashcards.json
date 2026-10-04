@@ -1,0 +1,17 @@
+[
+  { "front": "What three stages does every API request pass through in kube-apiserver?", "back": "Authentication (who are you, 401 on failure), authorization (may you, usually RBAC, 403), admission (mutating then validating; can change or reject the object)." },
+  { "front": "Role vs ClusterRole vs RoleBinding vs ClusterRoleBinding", "back": "Roles define permissions (Role: one namespace, ClusterRole: cluster-wide or reusable). Bindings grant them to subjects. A RoleBinding may reference a ClusterRole to grant it within one namespace only." },
+  { "front": "Can RBAC deny something?", "back": "No. RBAC is purely additive: permissions are the union of all bindings. Anything not granted is denied." },
+  { "front": "Command: check what a ServiceAccount may do in a namespace", "back": "`kubectl auth can-i --list -n dev --as system:serviceaccount:dev:ci`. Single check: `kubectl auth can-i delete pods -n dev --as ...`." },
+  { "front": "What is the username of a ServiceAccount?", "back": "`system:serviceaccount:<namespace>:<name>`, in groups `system:serviceaccounts` and `system:serviceaccounts:<namespace>`." },
+  { "front": "What is a bound, projected ServiceAccount token?", "back": "A short-lived JWT requested by the kubelet via the TokenRequest API, mounted into the pod, rotated automatically, audience-scoped, and invalid once the pod is deleted." },
+  { "front": "How do you stop a pod from getting an API token?", "back": "Set `automountServiceAccountToken: false` on the ServiceAccount or in the pod spec." },
+  { "front": "The hardened container securityContext (restricted-compliant)", "back": "`runAsNonRoot: true` (+ numeric user), `allowPrivilegeEscalation: false`, `capabilities.drop: [ALL]`, `seccompProfile.type: RuntimeDefault`, ideally `readOnlyRootFilesystem: true` with emptyDir for writable paths." },
+  { "front": "The three Pod Security Standards levels", "back": "`privileged` (no limits), `baseline` (blocks known escalations: privileged, host namespaces, hostPath), `restricted` (non-root, drop ALL caps, no privilege escalation, seccomp)." },
+  { "front": "How do you enforce Pod Security on a namespace?", "back": "Labels: `pod-security.kubernetes.io/enforce=restricted` (plus `enforce-version`, and `warn`/`audit` modes). PSA rejects violating pods; check ReplicaSet events when a Deployment has no pods." },
+  { "front": "NetworkPolicy default behaviour", "back": "Pods not selected by any policy allow all traffic. Once selected for Ingress or Egress, only explicitly allowed traffic in that direction is permitted. Rules are additive and replies are allowed automatically." },
+  { "front": "Default-deny NetworkPolicy spec", "back": "`podSelector: {}` and `policyTypes: [Ingress, Egress]` with no rules. Then add DNS egress to kube-dns on 53/UDP+TCP and explicit allows." },
+  { "front": "NetworkPolicy `from` list: OR or AND?", "back": "Separate list items are OR'ed. `namespaceSelector` and `podSelector` in the same item are AND'ed." },
+  { "front": "ValidatingAdmissionPolicy in one sentence", "back": "In-process admission rules written in CEL (policy + binding with `validationActions: Deny/Warn/Audit`), GA since 1.30, no webhook to run." },
+  { "front": "IRSA vs EKS Pod Identity", "back": "Both map a ServiceAccount to an IAM role for short-lived AWS credentials. IRSA uses the cluster's OIDC provider and an SA annotation; Pod Identity uses an agent add-on and an EKS association, with no OIDC/trust-policy per cluster." }
+]

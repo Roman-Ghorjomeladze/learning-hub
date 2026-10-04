@@ -1,0 +1,17 @@
+[
+  { "front": "Directories vs CLI workspaces for environments", "back": "Directories: env is obvious from the path, each can have its own backend/account and extra components; the default for dev/staging/prod. Workspaces: several states for one config and one backend; good for short-lived identical copies." },
+  { "front": "Why split state per component as well as per environment?", "back": "Faster plans, smaller blast radius, finer IAM (the services pipeline cannot delete the database), fewer lock conflicts." },
+  { "front": "Order of cheap checks in CI", "back": "`terraform fmt -check -recursive` → `terraform validate` → TFLint → Trivy/Checkov → `terraform test` → `plan`." },
+  { "front": "What can TFLint catch that `validate` can't?", "back": "Provider-specific invalid values (e.g. instance types), deprecated syntax, unused declarations and naming conventions, via rulesets like `tflint-ruleset-aws`." },
+  { "front": "Trivy vs tfsec", "back": "tfsec's Terraform checks were merged into Trivy; use `trivy config <dir>` to scan IaC for misconfigurations." },
+  { "front": "Minimal unit test with mocks", "back": "`mock_provider \"aws\" {}` at the top of a `.tftest.hcl`, then `run \"name\" { command = apply  assert { condition = ...  error_message = \"...\" } }`. No credentials, no real resources (Terraform 1.7+)." },
+  { "front": "How to assert that bad input is rejected in `terraform test`", "back": "A run with the bad variable value and `expect_failures = [var.environment]`; the run passes only if that validation fails." },
+  { "front": "`override_resource` / `override_data` / `override_module`", "back": "Replace values of a single resource, data source or module's outputs in tests, at file or run level, even with a real provider." },
+  { "front": "GitHub Actions OIDC to AWS: required pieces", "back": "IAM OIDC provider for `token.actions.githubusercontent.com` (client ID `sts.amazonaws.com`), a role trusting it with `aud` and `sub` conditions, `permissions: id-token: write`, and `aws-actions/configure-aws-credentials` with `role-to-assume`." },
+  { "front": "OIDC `sub` claim formats", "back": "`repo:ORG/REPO:pull_request`, `repo:ORG/REPO:ref:refs/heads/main`, `repo:ORG/REPO:environment:NAME` (when the job uses an environment)." },
+  { "front": "`terraform plan -detailed-exitcode` exit codes", "back": "0 = no changes, 1 = error, 2 = changes present. Used by scheduled drift detection." },
+  { "front": "Four ways to resolve drift", "back": "Apply to revert; update code to match; `ignore_changes` for fields another system owns; `apply -refresh-only` to accept reality into state." },
+  { "front": "Lock file hashes for Mac + Linux CI", "back": "`terraform providers lock -platform=darwin_arm64 -platform=linux_amd64`, then commit `.terraform.lock.hcl`." },
+  { "front": "Conftest against Terraform", "back": "`terraform show -json tfplan > plan.json`, Rego rules in `policy/` producing `deny` messages from `input.resource_changes`, then `conftest test plan.json`." },
+  { "front": "What does Terragrunt add?", "back": "Generates backend/provider boilerplate per component, passes inputs, handles dependencies between stacks and runs many stacks at once (`terragrunt run --all plan`). Worth it for large estates." }
+]

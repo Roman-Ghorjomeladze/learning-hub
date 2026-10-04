@@ -1,0 +1,17 @@
+[
+  { "front": "What do containers in a pod share?", "back": "The network namespace (one IP, one port space, localhost), IPC, pod-level volumes and optionally the PID namespace. Each has its own filesystem and resource limits." },
+  { "front": "What is the pause container?", "back": "The pod sandbox container created first; it holds the network namespace so app containers can restart without the pod losing its IP." },
+  { "front": "The five pod phases", "back": "`Pending`, `Running`, `Succeeded`, `Failed`, `Unknown`." },
+  { "front": "Pod conditions in order", "back": "`PodScheduled` → `PodReadyToStartContainers` → `Initialized` → `ContainersReady` → `Ready`. Only `Ready` pods get Service traffic." },
+  { "front": "Exit code 137 vs 143", "back": "137 = 128 + SIGKILL (OOMKilled, or did not stop within the grace period). 143 = 128 + SIGTERM (terminated without handling it)." },
+  { "front": "`command`/`args` vs ENTRYPOINT/CMD", "back": "`command` replaces ENTRYPOINT, `args` replaces CMD. Setting `command` also discards the image's CMD." },
+  { "front": "restartPolicy options", "back": "`Always` (default; required for Deployments), `OnFailure` and `Never` (for Jobs). Restarts happen in place with exponential back-off up to 5 minutes." },
+  { "front": "How do you declare a native sidecar container?", "back": "Put it in `initContainers` with `restartPolicy: Always`. It starts before the app, runs alongside it, stops after it, and does not block Job completion." },
+  { "front": "Sidecar vs ambassador vs adapter", "back": "Sidecar enhances the app (log shipper, mesh proxy). Ambassador proxies outbound connections (DB/auth proxy on localhost). Adapter normalises output (metrics exporter)." },
+  { "front": "Expose the pod name as an env var", "back": "`env: [{ name: POD_NAME, valueFrom: { fieldRef: { fieldPath: metadata.name } } }]`" },
+  { "front": "Graceful termination sequence", "back": "Pod marked Terminating → removed from endpoints (in parallel) → preStop hook → SIGTERM → wait up to `terminationGracePeriodSeconds` (default 30 s) → SIGKILL." },
+  { "front": "Why does a Node.js PID 1 ignore SIGTERM?", "back": "The kernel applies no default signal actions to PID 1. Without a `process.on('SIGTERM')` handler (or an init like tini), the signal is ignored until SIGKILL." },
+  { "front": "Liveness vs readiness vs startup probe", "back": "Liveness failure restarts the container. Readiness failure removes the pod from endpoints. Startup probe disables the others until the app has started." },
+  { "front": "Debug a container that has no shell", "back": "`kubectl debug -it <pod> --image=busybox:1.37 --target=<container>`; use `--copy-to=<new-pod>` to debug a copy instead." },
+  { "front": "What is a static pod?", "back": "A pod defined as a file in the kubelet's `staticPodPath` (e.g. `/etc/kubernetes/manifests`), run by the kubelet without the scheduler; the API shows a read-only mirror pod." }
+]

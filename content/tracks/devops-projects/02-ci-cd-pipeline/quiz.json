@@ -1,0 +1,170 @@
+[
+  {
+    "type": "single",
+    "q": "Your team deploys `ghcr.io/acme/api:main` to dev. After a merge, CI pushes a new `main` image, but Argo CD shows `Synced` and nothing rolls out. Why?",
+    "options": [
+      "Argo CD cannot pull from GHCR",
+      "The image pull policy must be `Never`",
+      "Nothing changed in Git: the manifest still says `:main`, so Argo CD sees no diff; mutable tags hide new versions from GitOps",
+      "Argo CD only syncs on tags"
+    ],
+    "answer": 2,
+    "explain": "GitOps reconciles Git against the cluster. If the rendered manifest is identical, there is nothing to sync. Commit an immutable reference (`sha-` tag and digest) so each release is a Git change."
+  },
+  {
+    "type": "multi",
+    "q": "Which are reasons pull-based GitOps is preferred over CI running `helm upgrade` against a Kubernetes cluster? (select all)",
+    "options": [
+      "It removes the need to build container images",
+      "Cluster credentials never have to be stored in CI",
+      "The API server does not need to be reachable from the CI provider",
+      "Drift is detected continuously and can be self-healed"
+    ],
+    "answer": [
+      1,
+      2,
+      3
+    ],
+    "explain": "The in-cluster agent pulls desired state from Git, so CI needs no cluster access, the API server can stay private, and the agent compares live state with Git all the time. Images still have to be built; GitOps only changes how they are deployed."
+  },
+  {
+    "type": "single",
+    "q": "Why does the `image` job build a single-platform image with `load: true` and scan it BEFORE the multi-arch push?",
+    "options": [
+      "So that no unscanned or vulnerable image is ever published to the registry; the later multi-arch build reuses cached layers",
+      "Trivy cannot scan multi-arch images",
+      "Because `load: true` is required for provenance",
+      "To halve the GitHub Actions minutes used"
+    ],
+    "answer": 0,
+    "explain": "Scanning a pushed image only gates deployment; the vulnerable image would still sit in the registry under a valid tag. Scan-before-push keeps the registry clean, and the gha cache makes the second build cheap."
+  },
+  {
+    "type": "single",
+    "q": "In March 2026 the version tags of a popular scanning action were force-pushed to malicious commits. Which practice would have protected your workflows?",
+    "options": [
+      "Using `@latest` instead of version tags",
+      "Setting `cancel-in-progress: true`",
+      "Running the action only on pull requests",
+      "Pinning third-party actions to full commit SHAs and updating them through Dependabot PRs"
+    ],
+    "answer": 3,
+    "explain": "Tags are mutable Git refs; a commit SHA is not. Pinned workflows kept running the audited code. Dependabot still proposes updates, as reviewable changes. Least-privilege permissions limit the damage if something slips through."
+  },
+  {
+    "type": "single",
+    "q": "A bot commit that bumps `deploy/envs/dev/values.yaml` is pushed with the workflow's `GITHUB_TOKEN`. Why does it not start an endless loop of pipeline runs?",
+    "options": [
+      "GitHub ignores commits by bots entirely",
+      "Events caused by `GITHUB_TOKEN` do not trigger new workflow runs (except workflow_dispatch/repository_dispatch), and the path filters exclude `deploy/envs/**`",
+      "Argo CD blocks the push",
+      "Because the commit message contains `deploy(dev)`"
+    ],
+    "answer": 1,
+    "explain": "GitHub deliberately suppresses workflow triggers from `GITHUB_TOKEN` pushes to prevent recursion. The `paths` filters are a second safety net. A personal access token or GitHub App token would trigger workflows, so the filters matter if you switch tokens."
+  },
+  {
+    "type": "single",
+    "q": "Your AWS IAM role trust policy for GitHub OIDC checks only `token.actions.githubusercontent.com:aud = sts.amazonaws.com`. What is the risk?",
+    "options": [
+      "Any workflow in any GitHub repository can obtain a token with that audience and assume your role; you must also restrict `sub`",
+      "Tokens expire too quickly",
+      "None; the audience check is sufficient",
+      "The role can only be used from `main`"
+    ],
+    "answer": 0,
+    "explain": "The audience is the same for everyone using the AWS action. The `sub` claim (for example `repo:roma/shipit:environment:production`) identifies your repository and context, and it is the actual security boundary."
+  },
+  {
+    "type": "multi",
+    "q": "What does a GitHub environment named `production` with protection rules give you? (select all)",
+    "options": [
+      "Secrets that are only exposed to jobs referencing the environment",
+      "Automatic rollback of failed Kubernetes deployments",
+      "Required reviewers who must approve before the job starts",
+      "Restriction of which branches or tags may deploy to it"
+    ],
+    "answer": [
+      0,
+      2,
+      3
+    ],
+    "explain": "Environments add approvals, wait timers, branch/tag rules, scoped secrets and a deployment history. Rollback is your deployment system's job (here: `git revert` and Argo CD)."
+  },
+  {
+    "type": "single",
+    "q": "`helm lint` passes but kubeconform reports `additional properties 'minAvailble' not allowed` for a PodDisruptionBudget. What does that tell you?",
+    "options": [
+      "kubeconform is wrong; helm lint validates schemas",
+      "The PDB API version is deprecated",
+      "helm lint checks chart structure and rendering, not Kubernetes field schemas; the typo would have been silently dropped or rejected at apply time",
+      "The cluster is missing the policy/v1 API"
+    ],
+    "answer": 2,
+    "explain": "Helm happily renders any YAML. Schema validation with `-strict` catches unknown and mistyped fields before they reach a cluster. Render optional templates too, or they are never validated."
+  },
+  {
+    "type": "single",
+    "q": "Why does the e2e job run `terraform apply -target=kind_cluster.this` before `terraform plan`?",
+    "options": [
+      "Because `-target` makes plans faster",
+      "Because the kubernetes and helm providers are configured from the cluster's outputs, and the image must be loaded into the cluster before the app release is planned and applied",
+      "Because kind clusters cannot be planned",
+      "Because Terraform cannot plan more than one provider at a time"
+    ],
+    "answer": 1,
+    "explain": "It is the same bootstrap as `make up`: create the cluster, load the image, then plan and apply everything else. In production, separate state files for cluster and workloads remove the need for `-target`."
+  },
+  {
+    "type": "single",
+    "q": "Which tag should the GitOps commit use to pin what runs in an environment?",
+    "options": [
+      "`latest`",
+      "`main`",
+      "`1.4` (major.minor)",
+      "The image digest (with a readable `sha-` or semver tag alongside it)"
+    ],
+    "answer": 3,
+    "explain": "A digest identifies exact bytes and cannot be re-pointed. `latest`, `main` and `1.4` are mutable. Keeping the readable tag next to the digest helps humans; the chart renders `repository@digest`."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about running workflows with `act` are true? (select all)",
+    "options": [
+      "A green act run proves the workflow will pass on GitHub",
+      "It runs jobs in local Docker containers that imitate GitHub's runners",
+      "OIDC tokens, environments and the `type=gha` cache are missing or only partially emulated",
+      "It sets `ACT=true` so steps can opt out with `if: ${{ !env.ACT }}`"
+    ],
+    "answer": [
+      1,
+      2,
+      3
+    ],
+    "explain": "act is a fast feedback loop for shell logic and job wiring. Runner images and GitHub-hosted services differ, so GitHub remains the source of truth."
+  },
+  {
+    "type": "single",
+    "q": "A developer's PR shows `npm ci` failing in CI with `package.json and package-lock.json are not in sync`, but `npm install` works locally. What is the right fix?",
+    "options": [
+      "Switch CI to `npm install`",
+      "Delete the lock file from the repository",
+      "Run `npm install` locally to update the lock file and commit it, so CI installs exactly the reviewed dependency tree",
+      "Cache `node_modules` in CI instead"
+    ],
+    "answer": 2,
+    "explain": "`npm ci` refuses to modify the lock file, which is the point: CI must install what was reviewed. Committing the updated lock file fixes the mismatch; `npm install` in CI would hide it."
+  },
+  {
+    "type": "single",
+    "q": "Trivy flags a HIGH CVE in a library that has a fixed version available. The library was added for one small helper. What is the best response?",
+    "options": [
+      "Remove the dependency (or upgrade to the fixed version), and only accept with an expiring, justified ignore if neither is possible",
+      "Set `exit-code: \"0\"` so the pipeline passes",
+      "Add it to `.trivyignore` permanently",
+      "Set `severity: CRITICAL` only"
+    ],
+    "answer": 0,
+    "explain": "Removing or upgrading fixes the risk. Ignores should be rare, justified, and expire, otherwise the gate turns into theatre."
+  }
+]

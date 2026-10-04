@@ -1,0 +1,14 @@
+[
+  { "front": "Request path in the capstone, edge to database", "back": "port-forward → Envoy proxy (TLS termination, HTTPRoute match, rewrite) → ready endpoint of shipit-api Service → API pod :3000 → Redis cache or Postgres via headless Service." },
+  { "front": "Why one Helm chart for the whole app here, and what changes in production?", "back": "Atomic upgrades and one values API. In production the database usually moves out (managed RDS or an operator like CloudNativePG), leaving the chart with API and web." },
+  { "front": "Why the API ConfigMap lives in its own template file", "back": "The `checksum/config` annotation includes the rendered ConfigMap template; a template cannot include itself without infinite recursion." },
+  { "front": "startupProbe vs livenessProbe vs readinessProbe for shipit-api", "back": "startup: allow slow boot before liveness runs. liveness `/healthz`: is the process alive (restart if not). readiness `/readyz`: can it serve now (remove from endpoints if not)." },
+  { "front": "Why `lifecycle.preStop.sleep` on web and API?", "back": "Endpoint removal propagates asynchronously; sleeping a few seconds before SIGTERM avoids sending requests to a pod that has stopped listening. The native sleep action needs no shell in the image." },
+  { "front": "Why `whenUnsatisfiable: ScheduleAnyway` in topology spread?", "back": "Prefer spreading replicas across nodes without blocking scheduling when nodes are drained or scarce." },
+  { "front": "Envoy Gateway: how to find the proxy Service for a Gateway", "back": "In `envoy-gateway-system`, select by labels `gateway.envoyproxy.io/owning-gateway-namespace=<ns>` and `gateway.envoyproxy.io/owning-gateway-name=<name>`." },
+  { "front": "How to redirect HTTP to HTTPS with Gateway API", "back": "An HTTPRoute attached to the HTTP listener (`sectionName: http`) with a `RequestRedirect` filter: `scheme: https`, `statusCode: 301`." },
+  { "front": "NetworkPolicy ports: Service port or pod port?", "back": "Pod (container) port, because policies apply to traffic after the Service's DNAT to the pod IP." },
+  { "front": "Why does a StatefulSet pod with a local-path PV stay Pending after a drain?", "back": "The PV has node affinity to the original node; the pod can only be scheduled where its volume is. EBS volumes are similarly bound to one AZ." },
+  { "front": "Biggest game day finding for shipit-api", "back": "Readiness included Redis, so a cache outage made every pod NotReady (total 503). Readiness should include only hard dependencies; degrade gracefully otherwise." },
+  { "front": "Hand over a Helm release to Argo CD without losing data", "back": "`helm uninstall` (PVCs from volumeClaimTemplates remain), then an Application for the chart with the same `releaseName` so labels and selectors match and the PVC is reused." }
+]

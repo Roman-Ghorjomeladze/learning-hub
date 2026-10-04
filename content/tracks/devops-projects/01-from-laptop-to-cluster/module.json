@@ -1,0 +1,24 @@
+{
+  "title": "Project 1: From laptop to cluster",
+  "summary": "Build shipit-api (Node 22 + TypeScript, Postgres, Redis) into a multi-arch image, provision a kind cluster with Gateway API using Terraform, ship it with your own Helm chart, and recreate the whole stack from zero with one command.",
+  "level": "advanced",
+  "estimatedMinutes": 480,
+  "objectives": [
+    "Write a production-shaped Node.js service with liveness/readiness endpoints and graceful shutdown",
+    "Build and publish a multi-arch (arm64 + amd64) image with buildx and verify its manifest list",
+    "Provision a kind cluster, Gateway API CRDs, a Gateway implementation and namespaces with Terraform",
+    "Author two Helm charts (app and data) and deploy them with Terraform helm_release or Argo CD",
+    "Prove zero-downtime rollouts and explain every design decision and trade-off in an interview",
+    "Tear down and recreate the entire environment from zero with a single Makefile target"
+  ],
+  "resources": [
+    { "title": "kind documentation", "url": "https://kind.sigs.k8s.io/", "type": "docs", "note": "Cluster config, extraPortMappings, loading images." },
+    { "title": "Gateway API", "url": "https://gateway-api.sigs.k8s.io/", "type": "spec", "note": "Gateway, HTTPRoute, implementations list and CRD install instructions." },
+    { "title": "Docker: multi-platform builds", "url": "https://docs.docker.com/build/building/multi-platform/", "type": "docs", "note": "buildx, QEMU, cross-compilation with BUILDPLATFORM/TARGETPLATFORM." },
+    { "title": "Helm documentation", "url": "https://helm.sh/docs/", "type": "docs", "note": "Chart structure, templates, best practices." },
+    { "title": "Terraform Helm provider", "url": "https://registry.terraform.io/providers/hashicorp/helm/latest/docs", "type": "docs", "note": "v3 uses attribute syntax for the kubernetes block." },
+    { "title": "tehcyx/kind Terraform provider", "url": "https://registry.terraform.io/providers/tehcyx/kind/latest/docs", "type": "docs", "note": "kind_cluster resource and its outputs." },
+    { "title": "Traefik Proxy documentation", "url": "https://doc.traefik.io/traefik/", "type": "docs", "note": "Kubernetes Gateway provider used as the Gateway API implementation." },
+    { "title": "Argo CD documentation", "url": "https://argo-cd.readthedocs.io/en/stable/", "type": "docs", "note": "Applications, sync policies, Helm value files." }
+  ]
+}

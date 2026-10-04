@@ -1,0 +1,23 @@
+{
+  "title": "Docker Compose",
+  "summary": "Describe a whole multi-container application in one compose.yaml: services, builds, env and interpolation, volumes, networks, healthcheck-gated startup, profiles, override files, hot reload with `compose watch`, secrets and configs. You'll build the full shipit stack (API + Postgres + Redis + migration job).",
+  "level": "intermediate",
+  "estimatedMinutes": 180,
+  "objectives": [
+    "Write a production-quality compose.yaml for an API with Postgres and Redis",
+    "Explain the difference between `environment`, `env_file` and `.env` interpolation, and their precedence",
+    "Gate startup order with healthchecks and `depends_on` conditions, including one-off migration jobs",
+    "Use profiles and multiple Compose files (override/prod) to serve different environments from one base",
+    "Set up `docker compose watch` for hot reload of a Node.js service",
+    "Use secrets and configs correctly, and inspect the final model with `docker compose config`",
+    "Operate a stack day to day: ps, logs, exec, run, scale, down, down -v"
+  ],
+  "resources": [
+    { "title": "Docker Compose overview", "url": "https://docs.docker.com/compose/", "type": "docs", "note": "Start here: concepts and how-tos." },
+    { "title": "Compose file reference", "url": "https://docs.docker.com/reference/compose-file/", "type": "spec", "note": "Every top-level element and service attribute." },
+    { "title": "Use Compose Watch", "url": "https://docs.docker.com/compose/how-tos/file-watch/", "type": "docs", "note": "sync, rebuild, sync+restart and friends for hot reload." },
+    { "title": "Control startup order", "url": "https://docs.docker.com/compose/how-tos/startup-order/", "type": "docs", "note": "depends_on conditions and healthchecks." },
+    { "title": "Merge Compose files", "url": "https://docs.docker.com/compose/how-tos/multiple-compose-files/merge/", "type": "docs", "note": "How override files are merged, plus !reset and !override." },
+    { "title": "Compose Specification (GitHub)", "url": "https://github.com/compose-spec/compose-spec", "type": "spec", "note": "The open specification behind compose.yaml." }
+  ]
+}

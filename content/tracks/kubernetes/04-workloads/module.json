@@ -1,0 +1,24 @@
+{
+  "title": "Workloads: Deployments, StatefulSets, DaemonSets, Jobs",
+  "summary": "The controllers that run your pods: ReplicaSets and Deployments with rolling updates and rollbacks, blue/green and canary with labels, DaemonSets, StatefulSets with stable identity and storage, Jobs and CronJobs. Ends with deploying shipit-api.",
+  "level": "intermediate",
+  "estimatedMinutes": 240,
+  "objectives": [
+    "Explain how a Deployment manages ReplicaSets and how a rolling update progresses with maxSurge and maxUnavailable",
+    "Use rollout status, history, undo, pause and resume, and diagnose a stuck rollout",
+    "Implement blue/green and canary releases with labels and Services",
+    "Run per-node agents with DaemonSets",
+    "Explain StatefulSet identity, ordering, headless Services and volumeClaimTemplates",
+    "Configure Jobs (completions, parallelism, backoffLimit, TTL, indexed) and CronJobs (schedule, timezone, concurrencyPolicy)",
+    "Choose the right controller for a workload and deploy shipit-api with Postgres and Redis"
+  ],
+  "resources": [
+    { "title": "Workload Management", "url": "https://kubernetes.io/docs/concepts/workloads/controllers/", "type": "docs", "note": "Index of all built-in workload controllers." },
+    { "title": "Deployments", "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/", "type": "docs", "note": "Rolling updates, rollbacks, pausing, proportional scaling." },
+    { "title": "StatefulSets", "url": "https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/", "type": "docs", "note": "Stable identity, ordering guarantees, update strategies, PVC retention." },
+    { "title": "DaemonSet", "url": "https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/", "type": "docs", "note": "One pod per node and how they are scheduled." },
+    { "title": "Jobs", "url": "https://kubernetes.io/docs/concepts/workloads/controllers/job/", "type": "docs", "note": "Completions, parallelism, indexed jobs, failure policies, TTL." },
+    { "title": "CronJob", "url": "https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/", "type": "docs", "note": "Schedules, time zones, concurrency policy and limitations." },
+    { "title": "Argo Rollouts", "url": "https://argoproj.github.io/rollouts/", "type": "tool", "note": "Progressive delivery (automated canary/blue-green) beyond what Deployments offer." }
+  ]
+}

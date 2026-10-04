@@ -1,0 +1,24 @@
+{
+  "title": "Project 2: CI/CD pipeline with GitOps",
+  "summary": "Give shipit a GitHub Actions pipeline: lint and test, multi-arch images on GHCR with cache, immutable tags, a Trivy gate, SBOM and provenance, Helm and Terraform checks with an ephemeral kind e2e, and pull-based GitOps delivery through Argo CD with approvals for production.",
+  "level": "advanced",
+  "estimatedMinutes": 420,
+  "objectives": [
+    "Design a pipeline around fast feedback, build-once-promote-many, immutable artifacts and least privilege",
+    "Build and push multi-arch images to GHCR with buildx, the GitHub Actions cache and a sha + semver tag strategy",
+    "Gate publication on a Trivy scan and attach SBOM, provenance and signed GitHub attestations",
+    "Validate Helm charts and Terraform in CI, including terraform test and an ephemeral end-to-end deploy on kind",
+    "Deploy with GitOps by committing image digests that Argo CD syncs, and explain why pull beats push for clusters",
+    "Use environments, required reviewers and OIDC federation, and run jobs locally with act"
+  ],
+  "resources": [
+    { "title": "GitHub Actions documentation", "url": "https://docs.github.com/en/actions", "type": "docs", "note": "Workflow syntax, permissions, environments, concurrency." },
+    { "title": "Docker: GitHub Actions for building images", "url": "https://docs.docker.com/build/ci/github-actions/", "type": "docs", "note": "buildx, cache backends, multi-platform, attestations." },
+    { "title": "Working with the GitHub Container registry", "url": "https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry", "type": "docs", "note": "Authentication, visibility, linking packages to repositories." },
+    { "title": "Trivy", "url": "https://trivy.dev/", "type": "tool", "note": "Vulnerability, misconfiguration and SBOM scanner." },
+    { "title": "Trivy supply chain compromise advisory (GHSA-69fq-xp46-6x23)", "url": "https://github.com/aquasecurity/trivy/security/advisories/GHSA-69fq-xp46-6x23", "type": "article", "note": "Why third-party actions must be pinned to commit SHAs." },
+    { "title": "Argo CD documentation", "url": "https://argo-cd.readthedocs.io/en/stable/", "type": "docs", "note": "Applications, Helm value files, sync policies." },
+    { "title": "nektos/act", "url": "https://github.com/nektos/act", "type": "tool", "note": "Run GitHub Actions locally." },
+    { "title": "SLSA", "url": "https://slsa.dev/", "type": "spec", "note": "Supply-chain levels and the provenance format BuildKit and GitHub attestations produce." }
+  ]
+}

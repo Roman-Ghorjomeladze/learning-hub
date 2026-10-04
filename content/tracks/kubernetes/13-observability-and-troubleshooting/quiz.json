@@ -1,0 +1,167 @@
+[
+  {
+    "type": "single",
+    "q": "A pod has been `Pending` for 10 minutes. `kubectl logs` returns nothing. What do you check first?",
+    "options": [
+      "`kubectl logs --previous`",
+      "The `Events` section of `kubectl describe pod` for `FailedScheduling` messages",
+      "`kubectl top pod`",
+      "The application's readiness probe"
+    ],
+    "answer": 1,
+    "explain": "Pending means the pod is not scheduled (or not yet set up on a node), so no container has run and there are no logs. The scheduler records why in events, e.g. `0/3 nodes are available: 3 Insufficient memory` or an unmatched node affinity, taint, or unbound PVC."
+  },
+  {
+    "type": "single",
+    "q": "A pod is in `CrashLoopBackOff`. `kubectl describe` shows `Last State: Terminated, Reason: OOMKilled, Exit Code: 137`. What is happening?",
+    "options": [
+      "The container exceeded its memory limit and the kernel OOM killer terminated it",
+      "The liveness probe timed out",
+      "The image could not be pulled",
+      "The node ran out of disk and evicted the pod"
+    ],
+    "answer": 0,
+    "explain": "OOMKilled with exit code 137 (128 + SIGKILL) means the container's cgroup hit `limits.memory`. Raise the limit to fit the real working set, fix the leak, or for Node.js cap the V8 heap with `--max-old-space-size` below the limit."
+  },
+  {
+    "type": "single",
+    "q": "A pod restarts every ~10 seconds. Logs show the app started normally. Last State says `Completed`, exit code 0. Events show `Liveness probe failed: connection refused`. What is the most likely problem?",
+    "options": [
+      "The application has a memory leak",
+      "A NetworkPolicy blocks the kubelet",
+      "The liveness probe is misconfigured (wrong port or path), so the kubelet keeps restarting a healthy app",
+      "The image entrypoint is wrong"
+    ],
+    "answer": 2,
+    "explain": "A restart with exit 0 plus liveness probe failure events means the kubelet killed the container (SIGTERM, graceful exit) because the probe failed. Fix the probe's port/path or add a startupProbe for slow starts."
+  },
+  {
+    "type": "single",
+    "q": "A pod shows `CreateContainerConfigError`. `kubectl get secret api-secrets` shows the Secret exists. What else should you check?",
+    "options": [
+      "Whether the node has enough CPU",
+      "Whether the image tag exists",
+      "Whether the Service selector matches",
+      "Whether the referenced key exists in the Secret"
+    ],
+    "answer": 3,
+    "explain": "CreateContainerConfigError arises when container configuration cannot be resolved: a missing ConfigMap/Secret **or a missing key**, or `runAsNonRoot` conflicts. The event reads `couldn't find key DB_PASSWORD in Secret ...`."
+  },
+  {
+    "type": "single",
+    "q": "A Deployment shows `READY 0/3` and `kubectl get pods -l app=api` returns nothing. Where is the error most likely recorded?",
+    "options": [
+      "In CoreDNS logs",
+      "In the container logs",
+      "In the kubelet logs of every node",
+      "In the events of the Deployment's ReplicaSet (e.g. quota exceeded, Pod Security or webhook rejection)"
+    ],
+    "answer": 3,
+    "explain": "If no pods exist, the ReplicaSet controller's create requests are being rejected at admission. The rejection is recorded as an event on the ReplicaSet: `kubectl describe rs -l app=api`."
+  },
+  {
+    "type": "single",
+    "q": "A Service has an empty EndpointSlice. The pods are `Running` and `1/1` ready. What is the most likely cause?",
+    "options": [
+      "The Service `targetPort` is wrong",
+      "CoreDNS is down",
+      "The Service's selector does not match the pods' labels",
+      "kube-proxy is not running"
+    ],
+    "answer": 2,
+    "explain": "Endpoints are built from pods that match the selector. With ready pods but no endpoints at all, the selector matches nothing. A wrong targetPort still produces endpoints (with the wrong port); DNS and kube-proxy problems do not empty the EndpointSlice."
+  },
+  {
+    "type": "multi",
+    "q": "`curl http://shipit-api` from another pod times out. Which could explain a **timeout** (as opposed to an immediate 'connection refused')? (select all)",
+    "options": [
+      "Traffic is sent to an IP where nothing answers or that is unreachable",
+      "The DNS name does not exist (NXDOMAIN)",
+      "A NetworkPolicy drops the traffic",
+      "The app listens on the right port and returns 500"
+    ],
+    "answer": [
+      0,
+      2
+    ],
+    "explain": "Dropped packets (NetworkPolicy, firewalls, unreachable IPs) produce timeouts. An HTTP 500 is a fast response. NXDOMAIN fails immediately with a resolution error, before any connection is attempted."
+  },
+  {
+    "type": "single",
+    "q": "Your app image is distroless (no shell). You need to inspect its network connections and processes without restarting it. What do you use?",
+    "options": [
+      "`kubectl debug -it pod --image=nicolaka/netshoot --target=<container>`",
+      "`kubectl exec -it pod -- sh`",
+      "`kubectl cp` a shell binary into the container",
+      "`kubectl attach`"
+    ],
+    "answer": 0,
+    "explain": "An ephemeral container joins the running pod's network namespace and, with `--target`, the container's process namespace, without restarting anything. `exec` needs a shell in the image; `attach` only connects to the main process's stdio."
+  },
+  {
+    "type": "single",
+    "q": "A namespace has been `Terminating` for an hour. Its conditions say `Some content in the namespace has finalizers remaining: example.com/backup`. The operator that owned that finalizer was uninstalled. What is the best course of action?",
+    "options": [
+      "Wait; Kubernetes removes finalizers automatically after 24 hours",
+      "Reinstall the operator so it can perform its cleanup and remove its finalizer; only if that is impossible, patch the finalizer away and clean up externally by hand",
+      "Delete the etcd data directory",
+      "Force-delete the namespace with `--grace-period=0`"
+    ],
+    "answer": 1,
+    "explain": "Finalizers exist so a controller can clean up (often external resources) before deletion. Restoring the controller lets that happen. Removing the finalizer manually works but skips the cleanup, so you may leave orphaned resources. Grace periods do not affect finalizers, and nothing removes them automatically."
+  },
+  {
+    "type": "single",
+    "q": "Which statement about metrics-server is correct?",
+    "options": [
+      "It provides the latest CPU/memory usage through the Metrics API, used by `kubectl top` and the HPA",
+      "It scrapes `/metrics` endpoints of your applications",
+      "It replaces Prometheus in production",
+      "It stores weeks of metrics history for dashboards"
+    ],
+    "answer": 0,
+    "explain": "metrics-server keeps only current resource usage in memory, collected from kubelets. History, application metrics, dashboards and alerting are Prometheus' job."
+  },
+  {
+    "type": "single",
+    "q": "You created a ServiceMonitor for shipit-api in a cluster running kube-prometheus-stack (release `kps`), but Prometheus never scrapes it. Pods expose `/metrics` correctly. What is the most common reason?",
+    "options": [
+      "Prometheus cannot scrape Node.js apps",
+      "The ServiceMonitor lacks the label the Prometheus resource selects on (by default `release: kps`), or its `port` does not match a named Service port",
+      "ServiceMonitors only work in the `monitoring` namespace",
+      "You must restart Prometheus after every ServiceMonitor change"
+    ],
+    "answer": 1,
+    "explain": "The Prometheus CR's `serviceMonitorSelector` defaults to the Helm release label. Also, `endpoints[].port` refers to the Service port **name**. The operator picks up changes automatically; no restart is needed."
+  },
+  {
+    "type": "multi",
+    "q": "Which practices make alerts useful rather than noisy? (select all)",
+    "options": [
+      "Alert on user-facing symptoms such as error rate, latency or SLO burn",
+      "Page on every pod restart in every namespace",
+      "Link a runbook from every alert",
+      "Use Alertmanager grouping and inhibition",
+      "Use `for:` durations to avoid flapping on short spikes"
+    ],
+    "answer": [
+      0,
+      2,
+      3,
+      4
+    ],
+    "explain": "Pages should mean users are affected and someone must act. Paging on every restart creates alert fatigue; restarts are better as a warning or dashboard signal, with crash loops covered by a `for:`-qualified alert."
+  },
+  {
+    "type": "single",
+    "q": "Where should a containerised NestJS service write its logs in Kubernetes?",
+    "options": [
+      "Directly to Elasticsearch from the application over HTTP",
+      "To a hostPath volume on the node",
+      "To `/var/log/app.log` inside the container",
+      "To stdout/stderr, ideally as structured JSON, collected by a node agent (Fluent Bit, Alloy) and shipped to a backend such as Loki"
+    ],
+    "answer": 3,
+    "explain": "stdout/stderr is the Kubernetes logging contract: `kubectl logs` works, the kubelet rotates files, and a DaemonSet agent adds metadata and ships them. Files inside the container consume ephemeral storage (risking eviction) and are lost with the pod."
+  }
+]

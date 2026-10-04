@@ -1,0 +1,17 @@
+[
+  { "front": "The five phases of incident response", "back": "Detect → triage → mitigate → resolve → postmortem, with communication throughout. Mitigate (stop the bleeding) before root-causing." },
+  { "front": "First triage questions", "back": "What is the user impact (who, how bad, since when)? What changed (deploys, config, infra, traffic)? Who is the incident commander?" },
+  { "front": "Exit code 137 vs 134 for a Node container", "back": "137 = SIGKILL, usually OOMKilled by the kernel (cgroup limit; Buffers count). 134 = SIGABRT, V8 `JavaScript heap out of memory`." },
+  { "front": "CreateContainerConfigError means…", "back": "Kubelet cannot build the container config: a referenced Secret/ConfigMap or key is missing. It protects you; never \"fix\" it with `optional: true` for required config." },
+  { "front": "Running but 0/1 READY with no restarts", "back": "Readiness probe failing; pod receives no traffic. Check the probe failure in `describe pod`, the readiness endpoint, and dependencies. Liveness failures would cause restarts." },
+  { "front": "What does `kubectl rollout undo` NOT revert?", "back": "Anything outside the pod template: `strategy`, `replicas`, `progressDeadlineSeconds`, HPA, Services, NetworkPolicies." },
+  { "front": "NetworkPolicy connectivity rule of thumb", "back": "Allow-lists: a connection needs egress allowed on the client AND ingress allowed on the server, plus DNS egress. Established connections may survive policy changes until the next restart." },
+  { "front": "Why can a PVC be Pending without any problem?", "back": "StorageClass `volumeBindingMode: WaitForFirstConsumer` delays provisioning until a pod using the claim is scheduled (event: `waiting for first consumer`)." },
+  { "front": "Two causes of `exec format error`", "back": "1) Binary built for another CPU architecture (arm64 vs amd64). 2) A script without a `#!` shebang. Check `docker image inspect --format '{{.Architecture}}'` and the file's first bytes." },
+  { "front": "HPA shows `<unknown>` for CPU", "back": "Usually missing CPU requests (utilisation = usage/request) or metrics-server problems. `kubectl describe hpa` names the reason." },
+  { "front": "Kubernetes DNS search and ndots:5", "back": "Names with fewer than 5 dots try `<name>.<ns>.svc.cluster.local`, `.svc.cluster.local`, `.cluster.local` first. Short Service names resolve in-namespace; external names cost extra lookups (use a trailing dot or lower ndots)." },
+  { "front": "Detect Terraform drift without changing anything", "back": "`terraform plan -refresh-only` shows real-world changes since the last apply. Then decide per change: codify it in code or let apply revert it." },
+  { "front": "Safe procedure for a stuck Terraform lock", "back": "Read lock info (ID, who, when), prove the holder is dead (processes, CI), `terraform force-unlock <ID>`, then plan to reconcile partial changes." },
+  { "front": "Helm `another operation is in progress`", "back": "A release record is stuck in `pending-*` (an interrupted operation). `helm history`, then `helm rollback <release> <last-deployed-rev>`. Prevent with `--rollback-on-failure` / `--atomic` and CI timeouts longer than Helm's." },
+  { "front": "Blameless postmortem essentials", "back": "Summary, impact, timeline, root cause + contributing factors, detection, response, action items with owner and due date. Describe system gaps, not people." }
+]

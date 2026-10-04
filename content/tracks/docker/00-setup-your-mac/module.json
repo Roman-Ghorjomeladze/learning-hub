@@ -1,0 +1,22 @@
+{
+  "title": "Set Up Your Mac",
+  "summary": "Install and understand the toolchain the whole hub uses: a container runtime (Docker Desktop, OrbStack or Colima), the Kubernetes and Terraform CLIs, image tooling, editor extensions and shell ergonomics — plus how the Linux VM behind Docker on macOS actually works.",
+  "level": "beginner",
+  "estimatedMinutes": 90,
+  "objectives": [
+    "Choose between Docker Desktop, OrbStack and Colima based on licensing, resources and features",
+    "Explain why Docker on macOS runs inside a Linux VM and what that means for bind mounts, networking and amd64 images",
+    "Install and verify kubectl, kind, helm, k9s, terraform, jq, yq, dive, trivy and hadolint with Homebrew",
+    "Switch between Docker endpoints with docker context and repair a broken socket or context",
+    "Size the VM's CPU, memory and disk and set up shell completion and aliases"
+  ],
+  "resources": [
+    { "title": "Install Docker Desktop on Mac", "url": "https://docs.docker.com/desktop/setup/install/mac-install/", "type": "docs", "note": "Official install guide, system requirements and licensing notes." },
+    { "title": "Docker contexts", "url": "https://docs.docker.com/engine/manage-resources/contexts/", "type": "docs", "note": "How the CLI picks which daemon to talk to." },
+    { "title": "OrbStack documentation", "url": "https://docs.orbstack.dev/", "type": "docs", "note": "Lightweight Docker and Linux VM runtime for macOS." },
+    { "title": "Colima on GitHub", "url": "https://github.com/abiosoft/colima", "type": "tool", "note": "Open-source container runtime for macOS built on Lima." },
+    { "title": "Homebrew", "url": "https://brew.sh/", "type": "tool", "note": "The macOS package manager used for every CLI in this hub." },
+    { "title": "Install Terraform (HashiCorp)", "url": "https://developer.hashicorp.com/terraform/install", "type": "docs", "note": "Why to use the hashicorp/tap formula." },
+    { "title": "kind quick start", "url": "https://kind.sigs.k8s.io/docs/user/quick-start/", "type": "docs", "note": "Local Kubernetes clusters in Docker — used in the Kubernetes track." }
+  ]
+}

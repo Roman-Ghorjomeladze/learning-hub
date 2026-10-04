@@ -1,0 +1,166 @@
+[
+  {
+    "type": "single",
+    "q": "A variable is set with a `default`, in `terraform.tfvars`, in `prod.auto.tfvars` and via `TF_VAR_`. Which value does Terraform use?",
+    "options": [
+      "The `TF_VAR_` environment variable",
+      "`terraform.tfvars`",
+      "`prod.auto.tfvars`",
+      "The `default`"
+    ],
+    "answer": 2,
+    "explain": "Precedence from high to low: CLI `-var`/`-var-file`, `*.auto.tfvars` (lexical order), `terraform.tfvars.json`, `terraform.tfvars`, `TF_VAR_` env vars, `default`. With no CLI flags, the auto tfvars file wins."
+  },
+  {
+    "type": "single",
+    "q": "Given `type = object({ image = optional(string, \"nginx:1.30-alpine\"), port = number })` and the caller passes `{ port = 8080 }`, what is `var.x.image`?",
+    "options": [
+      "`\"nginx:1.30-alpine\"`",
+      "`null`",
+      "An error: `image` is missing",
+      "An empty string"
+    ],
+    "answer": 0,
+    "explain": "`optional(type, default)` fills in the default when the attribute is omitted. Without a second argument the attribute would be `null`."
+  },
+  {
+    "type": "single",
+    "q": "You mark a variable `db_password` as `sensitive = true`. Where can the value still be seen?",
+    "options": [
+      "Nowhere; Terraform encrypts it",
+      "Only in the plan output",
+      "Only in `.terraform.lock.hcl`",
+      "In the state file in plain text, and via `terraform output -raw` if an output exposes it"
+    ],
+    "answer": 3,
+    "explain": "`sensitive` redacts values in CLI output. It does not encrypt state; the value is stored in plain text there. Protect state (encrypted remote backend, restricted access) or use ephemeral values where supported."
+  },
+  {
+    "type": "single",
+    "q": "Plan fails with `Error: Output refers to sensitive values`. What is the right fix?",
+    "options": [
+      "Add `sensitive = true` to the output (or stop outputting the secret)",
+      "Wrap the value in `nonsensitive()` everywhere",
+      "Remove `sensitive = true` from the variable",
+      "Run with `-var-file` instead of `TF_VAR_`"
+    ],
+    "answer": 0,
+    "explain": "Terraform requires root module outputs that derive from sensitive values to be explicitly marked sensitive, confirming your intent. `nonsensitive()` exists but removing protection should be a deliberate, rare decision."
+  },
+  {
+    "type": "multi",
+    "q": "Which are valid ways to provide a value for `variable \"api_port\"`? (select all)",
+    "options": [
+      "`terraform plan -var='api_port=3000'`",
+      "`export TF_VAR_api_port=3000`",
+      "`api_port = 3000` in `dev.auto.tfvars`",
+      "`export TERRAFORM_API_PORT=3000`"
+    ],
+    "answer": [
+      0,
+      1,
+      2
+    ],
+    "explain": "CLI flags, `TF_VAR_<name>` env vars and tfvars files (including `*.auto.tfvars`) all work. Terraform does not read arbitrary environment variables."
+  },
+  {
+    "type": "single",
+    "q": "This validation fails with an error about the condition not being a bool: `condition = regex(\"^[a-z-]+$\", var.name)`. What should you write?",
+    "options": [
+      "`condition = regex(\"^[a-z-]+$\", var.name) == true`",
+      "`condition = can(regex(\"^[a-z-]+$\", var.name))`",
+      "`condition = tobool(regex(\"^[a-z-]+$\", var.name))`",
+      "`condition = try(var.name, false)`"
+    ],
+    "answer": 1,
+    "explain": "`regex()` returns the matched string or raises an error if nothing matches. `can()` turns 'evaluates without error' into `true`/`false`, which is exactly what a validation condition needs."
+  },
+  {
+    "type": "single",
+    "q": "What is the main difference between a `locals` value and a `variable`?",
+    "options": [
+      "Locals are internal, computed names that callers cannot set; variables are the module's public inputs",
+      "Locals are faster to evaluate",
+      "Locals can be set by callers with `-local`",
+      "Variables can reference resources; locals cannot"
+    ],
+    "answer": 0,
+    "explain": "Locals are like `const` inside a function: they name derived values and keep config readable. Each variable is part of the module's public interface, so don't turn locals into variables 'just in case'."
+  },
+  {
+    "type": "single",
+    "q": "A colleague says \"Terraform ignores my `terraform.tfvars`; the value is always the old one\". What do you check first?",
+    "options": [
+      "Whether the provider version changed",
+      "Leftover `*.auto.tfvars` files in the folder and `-var`/`-var-file` flags added by their command or wrapper script",
+      "Whether the state file is locked",
+      "Whether `terraform fmt` was run"
+    ],
+    "answer": 1,
+    "explain": "`*.auto.tfvars` files and CLI flags both outrank `terraform.tfvars`, so a forgotten `old.auto.tfvars` or a Makefile that adds `-var` is the usual culprit. (`TF_VAR_` exports rank *below* `terraform.tfvars`, so they can't override it.)"
+  },
+  {
+    "type": "single",
+    "q": "A variable has `nullable = false` and `default = {}`. A caller passes `labels = null`. What value does the module see?",
+    "options": [
+      "`null`",
+      "`{}`",
+      "An error is always raised",
+      "An empty string"
+    ],
+    "answer": 1,
+    "explain": "With `nullable = false`, passing null means 'use the default'. If there were no default it would be an error. With the default `nullable = true`, the module would receive `null`."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about data sources are true? (select all)",
+    "options": [
+      "They read information without creating or managing the object",
+      "They are normally read during plan, unless they depend on values known only after apply",
+      "If the queried object doesn't exist, the plan fails",
+      "`terraform destroy` deletes the objects they read"
+    ],
+    "answer": [
+      0,
+      1,
+      2
+    ],
+    "explain": "Data sources are read-only lookups. They are evaluated at plan time when possible and fail loudly when the object is missing. Destroy only affects managed resources, never data sources."
+  },
+  {
+    "type": "single",
+    "q": "Which type should you use for a list of unique security group IDs where order doesn't matter?",
+    "options": [
+      "`list(string)`",
+      "`tuple([string])`",
+      "`map(string)`",
+      "`set(string)`"
+    ],
+    "answer": 3,
+    "explain": "`set(string)` removes duplicates and has no ordering, which avoids spurious diffs caused by reordering. Note that sets can't be indexed with `[0]`."
+  },
+  {
+    "type": "single",
+    "q": "You want to validate that `var.max_replicas >= var.min_replicas`. Which is true on Terraform 1.9+?",
+    "options": [
+      "You must use a `precondition` on a resource; validation can only reference its own variable",
+      "It's impossible to compare two variables",
+      "You need a `check` block",
+      "A `validation` block in `max_replicas` can reference `var.min_replicas`"
+    ],
+    "answer": 3,
+    "explain": "Since Terraform 1.9, validation conditions can reference other variables, locals and data sources. On older versions a resource `precondition` was the workaround."
+  },
+  {
+    "type": "single",
+    "q": "In a script you need the plain value of output `api_url` with no quotes. Which command?",
+    "options": [
+      "`terraform output api_url`",
+      "`terraform output -raw api_url`",
+      "`terraform show api_url`",
+      "`terraform state show api_url`"
+    ],
+    "answer": 1,
+    "explain": "`-raw` prints a string output without quotes or formatting, ideal for `curl \"$(terraform output -raw api_url)\"`. `-json` is better for structured outputs with `jq`."
+  }
+]

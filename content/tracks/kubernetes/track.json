@@ -1,0 +1,12 @@
+{
+  "title": "Kubernetes",
+  "tagline": "Understand the control loop, run real workloads, and fix them when they break.",
+  "description": "Architecture, kubectl fluency, workloads, networking, Gateway API, config, storage, scheduling, autoscaling, security, Helm/Kustomize/GitOps and observability, all practised on a local kind cluster. Finish by shipping a full app to Kubernetes.",
+  "accent": "#326CE5",
+  "level": "Beginner → Advanced",
+  "prerequisites": ["docker"],
+  "pages": [
+    { "id": "cheatsheet", "title": "kubectl cheatsheet", "file": "cheatsheet.md" },
+    { "id": "interview", "title": "Interview questions", "file": "interview.md" }
+  ]
+}

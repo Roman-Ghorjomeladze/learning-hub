@@ -1,0 +1,24 @@
+{
+  "title": "Capstone: Ship shipit to Kubernetes",
+  "summary": "Deploy the full shipit stack (API, web, Postgres, Redis) to a multi-node kind cluster with your own Helm chart, Gateway API routing with TLS, StatefulSet storage, probes, autoscaling, disruption budgets, NetworkPolicies, RBAC and Pod Security, optionally via Argo CD, then break it on purpose in a game day.",
+  "level": "advanced",
+  "estimatedMinutes": 480,
+  "objectives": [
+    "Turn a multi-service application into a single, well-structured Helm chart",
+    "Run Postgres as a StatefulSet with a PersistentVolumeClaim and prove data survives pod loss",
+    "Expose the app over HTTPS with Gateway API (Envoy Gateway), including path rewriting and an HTTP-to-HTTPS redirect",
+    "Make the app resilient: probes, resources, HPA, PDB, topology spread, graceful shutdown",
+    "Lock it down: restricted Pod Security, least-privilege ServiceAccounts, default-deny NetworkPolicies",
+    "Optionally deliver it with Argo CD",
+    "Run a game day, record what broke and what you would change"
+  ],
+  "resources": [
+    { "title": "Gateway API documentation", "url": "https://gateway-api.sigs.k8s.io/", "type": "docs", "note": "HTTPRoute matching, filters (redirect, rewrite), TLS listeners." },
+    { "title": "Envoy Gateway documentation", "url": "https://gateway.envoyproxy.io/docs/", "type": "docs", "note": "The Gateway API implementation used in this capstone." },
+    { "title": "kind documentation", "url": "https://kind.sigs.k8s.io/", "type": "docs", "note": "Multi-node clusters, loading images, configuration." },
+    { "title": "Helm Chart Best Practices", "url": "https://helm.sh/docs/chart_best_practices/", "type": "docs", "note": "Conventions for values, labels, templates." },
+    { "title": "StatefulSet basics tutorial", "url": "https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/", "type": "docs", "note": "Stable identities, headless Services, volumeClaimTemplates." },
+    { "title": "Specifying a Disruption Budget", "url": "https://kubernetes.io/docs/tasks/run-application/configure-pdb/", "type": "docs", "note": "PDBs and how evictions respect them." },
+    { "title": "Argo CD documentation", "url": "https://argo-cd.readthedocs.io/en/stable/", "type": "docs", "note": "For the optional GitOps milestone." }
+  ]
+}

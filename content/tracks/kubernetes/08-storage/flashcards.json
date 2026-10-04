@@ -1,0 +1,17 @@
+[
+  { "front": "Lifetime of an `emptyDir` volume", "back": "The pod's lifetime: survives container restarts, deleted when the pod is removed from the node. `medium: Memory` makes it tmpfs (counts toward memory limits)." },
+  { "front": "Why avoid `hostPath` for app data?", "back": "Data is tied to one node, the pod can read/modify host files (security risk; forbidden by Pod Security baseline), and it breaks when the pod moves. It is for node agents." },
+  { "front": "PV vs PVC vs StorageClass", "back": "PV: a real piece of storage (cluster-scoped). PVC: a namespaced request that pods reference. StorageClass: tells a provisioner how to create PVs dynamically. PVC and PV bind 1:1." },
+  { "front": "The four access modes", "back": "RWO (one node read-write), RWOP (one pod), ROX (many nodes read-only), RWX (many nodes read-write, e.g. EFS/NFS). EBS is RWO." },
+  { "front": "Reclaim policies", "back": "`Delete` (default for dynamic): PV and disk are deleted with the PVC. `Retain`: PV becomes `Released`, disk kept; remove `claimRef` to reuse. `Recycle` is deprecated." },
+  { "front": "Why `volumeBindingMode: WaitForFirstConsumer`?", "back": "Provisioning waits until the pod is scheduled, so zonal/local volumes are created where the pod can run. Avoids `volume node affinity conflict`." },
+  { "front": "kind's default storage", "back": "Rancher local-path-provisioner, StorageClass `standard` (default): directories inside the node container, PV pinned to that node, WaitForFirstConsumer, Delete, no expansion or snapshots." },
+  { "front": "How to grow a PVC", "back": "StorageClass must have `allowVolumeExpansion: true`; patch `spec.resources.requests.storage` on the PVC. Shrinking is not supported. StatefulSet templates can't be edited, so patch each PVC." },
+  { "front": "What a StatefulSet provides", "back": "Stable pod names (`app-0`), stable DNS via a headless Service, per-replica PVCs from `volumeClaimTemplates`, ordered rollout. Not replication or failover." },
+  { "front": "PostgreSQL 18 official image volume path", "back": "Mount at `/var/lib/postgresql` (PGDATA is `/var/lib/postgresql/18/docker`). Up to 17 it was `/var/lib/postgresql/data`; 18+ refuses to start with a mount at the old path." },
+  { "front": "`persistentVolumeClaimRetentionPolicy`", "back": "StatefulSet field with `whenDeleted` and `whenScaled`, each `Retain` (default) or `Delete`, controlling whether PVCs are removed with the StatefulSet or on scale-down." },
+  { "front": "EBS on EKS in one breath", "back": "EBS CSI driver add-on (IAM via IRSA/Pod Identity), gp3 StorageClass with `WaitForFirstConsumer`, encrypted, expansion on. Volumes are RWO and tied to one AZ." },
+  { "front": "VolumeSnapshot requirements", "back": "Snapshot CRDs + snapshot controller + a CSI driver with snapshot support, and a VolumeSnapshotClass. Restore by creating a PVC with `dataSource` pointing at the snapshot. Crash-consistent." },
+  { "front": "Layers of a database backup strategy", "back": "Logical dumps (pg_dump), physical backups + WAL archiving for PITR (Barman, pgBackRest, WAL-G), volume snapshots, Velero for cluster resources, all stored off-cluster, plus regular restore drills." },
+  { "front": "What does a database operator like CloudNativePG add?", "back": "Replication setup, automated failover, `-rw`/`-ro` Services, backups and WAL archiving to object storage, PITR and managed upgrades, declared through a `Cluster` custom resource." }
+]

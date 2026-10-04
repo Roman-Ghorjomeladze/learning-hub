@@ -1,0 +1,17 @@
+[
+  { "front": "How do you get a locally built image into a kind cluster?", "back": "`kind load docker-image <image:tag> --name <cluster>` (or `kind load image-archive`, or a local registry). Use an explicit tag so the pull policy defaults to `IfNotPresent`." },
+  { "front": "Default `imagePullPolicy` rules", "back": "`Always` if the tag is `:latest` or missing; `IfNotPresent` for any other tag or a digest." },
+  { "front": "What does kind's `extraPortMappings` do?", "back": "Publishes a port of a node container on the host (like `docker run -p`), e.g. a NodePort 30080 to `localhost:30080`. Must be set at cluster creation." },
+  { "front": "The three sections of a kubeconfig", "back": "`clusters` (server URL + CA), `users` (credentials or exec plugin), `contexts` (cluster + user + namespace), plus `current-context`." },
+  { "front": "Change the default namespace of the current context", "back": "`kubectl config set-context --current --namespace=<ns>` (or `kubens <ns>`)." },
+  { "front": "Generate a Deployment manifest without creating it", "back": "`kubectl create deployment web --image=nginx:1.27-alpine --replicas=2 --dry-run=client -o yaml > deploy.yaml`" },
+  { "front": "What does `kubectl diff -f` do and what are its exit codes?", "back": "Server-side dry runs the apply and shows a diff against live objects. 0 = no changes, 1 = changes, >1 = error." },
+  { "front": "Imperative vs declarative", "back": "Imperative: commands that perform an action now (`create`, `scale`, `set image`). Declarative: `kubectl apply -f` files describing desired state; idempotent, diffable and reviewable." },
+  { "front": "Print pod name and node per line with JSONPath", "back": "`kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{\"\\t\"}{.spec.nodeName}{\"\\n\"}{end}'`" },
+  { "front": "Logs of a crashed container", "back": "`kubectl logs <pod> --previous` (add `-c <container>` for multi-container pods)." },
+  { "front": "Logs from all pods of an app at once", "back": "`kubectl logs -l app=web --all-containers --prefix --since=10m`" },
+  { "front": "Wait until a Deployment is ready", "back": "`kubectl rollout status deploy/web --timeout=120s` or `kubectl wait --for=condition=Available deploy/web --timeout=120s`." },
+  { "front": "Three kubectl patch types", "back": "Strategic merge (default; merges lists by key like `name`), JSON merge `--type merge` (replaces lists), JSON patch `--type json` (explicit ops at paths)." },
+  { "front": "What does `kubectl rollout restart` do?", "back": "Adds a `restartedAt` annotation to the pod template, triggering a normal rolling update that replaces all pods. Useful after changing a mounted Secret/ConfigMap consumed as env vars." },
+  { "front": "Five k9s keys worth remembering", "back": "`:` switch resource, `/` filter, `l` logs, `s` shell, `d` describe (plus `Shift-f` port-forward, `0` all namespaces)." }
+]

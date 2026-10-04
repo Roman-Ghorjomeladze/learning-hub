@@ -1,0 +1,16 @@
+[
+  { "front": "Why isn't a container a strong security boundary by default?", "back": "All containers share the host kernel. Isolation relies on namespaces, cgroups, capabilities, seccomp and LSMs; a kernel bug or a misconfiguration (privileged, sockets, mounts) can lead to the host." },
+  { "front": "The hardened `docker run` flag set", "back": "`--user 1000:1000 --cap-drop ALL --security-opt no-new-privileges --read-only --tmpfs /tmp:noexec,nosuid --memory --cpus --pids-limit`." },
+  { "front": "How many capabilities does Docker grant by default, and how do you remove them?", "back": "14 (e.g. CHOWN, DAC_OVERRIDE, SETUID, SETGID, NET_RAW, NET_BIND_SERVICE). `--cap-drop ALL`, then `--cap-add` only what's proven necessary." },
+  { "front": "What does `no-new-privileges` do?", "back": "Sets `PR_SET_NO_NEW_PRIVS`: setuid/setgid binaries and file capabilities can't raise privileges on `execve`." },
+  { "front": "Why is mounting docker.sock dangerous?", "back": "Socket access = full daemon control = host root (e.g. start a privileged container that mounts `/`)." },
+  { "front": "What does `--privileged` do?", "back": "Grants all capabilities and devices and disables seccomp/AppArmor confinement. Treat it as root on the host; never for apps." },
+  { "front": "Build-time secret, the right way", "back": "`RUN --mount=type=secret,id=npmrc,target=/root/.npmrc npm ci` + `docker build --secret id=npmrc,src=$HOME/.npmrc`. Never ARG/ENV/COPY." },
+  { "front": "Why doesn't `RUN rm secret.txt` remove a copied secret?", "back": "Layers are immutable; the delete only adds a whiteout in a new layer. The earlier layer still contains the file." },
+  { "front": "Rootless mode vs userns-remap", "back": "Rootless: the daemon and containers run as an unprivileged user. userns-remap: daemon is root, container UIDs are mapped to unprivileged host UIDs." },
+  { "front": "Three image scanners", "back": "Docker Scout (`docker scout cves/quickview/recommendations`), Trivy (`trivy image`), Grype (`grype`). Gate CI on fixable critical/high." },
+  { "front": "SBOM vs provenance", "back": "SBOM: what's inside the image (packages, versions). Provenance: how it was built (source, commit, builder). BuildKit: `--sbom=true --provenance=mode=max`." },
+  { "front": "Why sign and deploy digests, not tags?", "back": "Tags are mutable pointers; a digest is a content hash of the manifest (and transitively every layer). `cosign sign <image>@sha256:...`." },
+  { "front": "What is docker-bench-security?", "back": "A script that checks a Docker host against the CIS Docker Benchmark (daemon config, privileged containers, read-only rootfs, logging...)." },
+  { "front": "Lesson of the 2026 Trivy GitHub Actions compromise", "back": "Mutable tags (Git or image) can be repointed. Pin third-party actions to commit SHAs and limit CI token permissions." }
+]

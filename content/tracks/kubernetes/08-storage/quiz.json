@@ -1,0 +1,165 @@
+[
+  {
+    "type": "single",
+    "q": "A container in a pod crashes and is restarted by the kubelet. What happens to data in the pod's `emptyDir` volume?",
+    "options": [
+      "It is wiped, because emptyDir is tied to the container",
+      "It is kept only if `medium: Memory` is set",
+      "It is copied to a PersistentVolume",
+      "It is kept; emptyDir lives as long as the pod, and is deleted only when the pod is removed from the node"
+    ],
+    "answer": 3,
+    "explain": "emptyDir has pod lifetime. Container restarts keep it; deleting the pod (or eviction/rescheduling) destroys it. `medium: Memory` just backs it with tmpfs."
+  },
+  {
+    "type": "single",
+    "q": "You create a PVC on kind and it stays `Pending` with the event `waiting for first consumer to be created before binding`. What should you do?",
+    "options": [
+      "Delete it and switch to `Immediate` binding",
+      "Nothing is wrong: with `WaitForFirstConsumer`, the volume is provisioned when a pod using the PVC is scheduled",
+      "Install a CSI driver",
+      "Create a PV manually"
+    ],
+    "answer": 1,
+    "explain": "`WaitForFirstConsumer` delays provisioning until the scheduler picks a node, so the volume is created in the right node/zone. Create the pod and the PVC binds."
+  },
+  {
+    "type": "single",
+    "q": "On EKS, a pod using a gp3 EBS volume with `volumeBindingMode: Immediate` stays Pending with `volume node affinity conflict`. What is the most likely cause?",
+    "options": [
+      "gp3 does not support Kubernetes",
+      "The PVC requested ReadWriteMany",
+      "The volume was provisioned in an AZ where no schedulable node can run the pod; EBS volumes are zonal",
+      "The kubelet lacks IAM permissions"
+    ],
+    "answer": 2,
+    "explain": "With `Immediate`, the disk is created before scheduling, possibly in an AZ that does not fit the pod (resources, affinity, taints). `WaitForFirstConsumer` avoids this by provisioning after scheduling."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about access modes are true? (select all)",
+    "options": [
+      "`ReadWriteOnce` allows multiple pods on the same node to mount the volume read-write",
+      "`ReadWriteOncePod` restricts the volume to a single pod in the cluster",
+      "EBS volumes support `ReadWriteMany` across AZs",
+      "Amazon EFS is a typical choice for `ReadWriteMany`"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "RWO is per node, RWOP per pod. EBS is RWO and zonal; for RWX use a shared filesystem such as EFS (NFS)."
+  },
+  {
+    "type": "single",
+    "q": "A PVC whose PV has reclaim policy `Delete` is deleted. What happens?",
+    "options": [
+      "The PV and the underlying disk are deleted",
+      "The PV becomes `Released` and the data stays",
+      "The PV is recycled with `rm -rf` and made available",
+      "Nothing until the namespace is deleted"
+    ],
+    "answer": 0,
+    "explain": "`Delete` removes the PV and the backing storage. `Retain` keeps both (PV goes to `Released`). `Recycle` is deprecated."
+  },
+  {
+    "type": "single",
+    "q": "A retained PV is `Released`. A new PVC that matches it stays `Pending`. Why?",
+    "options": [
+      "Retained PVs can never be reused",
+      "The reclaim policy must be changed to `Delete` first",
+      "The new PVC must be in the `default` namespace",
+      "The PV still has a `spec.claimRef` pointing to the old claim; an admin must remove it to make the PV `Available`"
+    ],
+    "answer": 3,
+    "explain": "Kubernetes refuses to hand old data to a new claim automatically. Removing `claimRef` (after deciding the data can be reused or wiping it) makes the PV bindable again."
+  },
+  {
+    "type": "single",
+    "q": "You scale a PostgreSQL StatefulSet from 1 to 3 replicas. What do `postgres-1` and `postgres-2` contain?",
+    "options": [
+      "Streaming replicas of `postgres-0`",
+      "Independent, freshly initialised databases on their own new PVCs",
+      "Copies of `postgres-0`'s disk made by Kubernetes",
+      "Nothing; StatefulSets cannot scale databases"
+    ],
+    "answer": 1,
+    "explain": "StatefulSets give stable names and per-replica PVCs but know nothing about Postgres replication. Operators such as CloudNativePG handle replication, failover and backups."
+  },
+  {
+    "type": "single",
+    "q": "A `postgres:18` StatefulSet mounts its PVC at `/var/lib/postgresql/data` (the path used up to PostgreSQL 17). What happens?",
+    "options": [
+      "The image's entrypoint detects the mount at the old path and exits with an error about the 18+ data layout; mount at `/var/lib/postgresql` instead",
+      "It works the same as before",
+      "Postgres automatically migrates the data",
+      "The PVC is resized"
+    ],
+    "answer": 0,
+    "explain": "PostgreSQL 18 images use `PGDATA=/var/lib/postgresql/18/docker` and declare `/var/lib/postgresql` as the volume. The entrypoint refuses to run with a mount at the old path, to prevent writing data outside the volume."
+  },
+  {
+    "type": "single",
+    "q": "A worker app writes to `/var/media`, but its PVC is mounted at `/media`. What symptom do you expect?",
+    "options": [
+      "`CreateContainerConfigError`",
+      "The pod stays Pending",
+      "Everything appears to work, but data is lost whenever the pod is replaced",
+      "The kubelet refuses to mount the volume"
+    ],
+    "answer": 2,
+    "explain": "Writes go to the container's ephemeral writable layer. Nothing fails until the pod is recreated. Verify persistence with `df -h <path>` and a restart test."
+  },
+  {
+    "type": "multi",
+    "q": "A Deployment with `replicas: 1`, `strategy: RollingUpdate` and an RWO EBS PVC gets stuck during a rollout with `Multi-Attach error`. Which fixes are appropriate? (select all)",
+    "options": [
+      "Use `strategy: Recreate` so the old pod releases the volume first",
+      "Use a StatefulSet",
+      "Increase `maxSurge` to 2",
+      "Switch the PVC access mode to `ReadWriteMany` on the same EBS StorageClass"
+    ],
+    "answer": [
+      0,
+      1
+    ],
+    "explain": "RollingUpdate starts the new pod before the old one stops; if it lands on another node, the RWO volume is still attached elsewhere. Recreate or a StatefulSet (which replaces pods one by one, old first) avoids that. EBS does not support RWX, and more surge makes it worse."
+  },
+  {
+    "type": "single",
+    "q": "What is the role of a CSI node plugin?",
+    "options": [
+      "It creates disks through the cloud API",
+      "It takes VolumeSnapshots",
+      "It schedules pods close to their volumes",
+      "It runs on every node (DaemonSet) and formats/mounts volumes into pods when the kubelet asks"
+    ],
+    "answer": 3,
+    "explain": "The controller plugin (with sidecars like external-provisioner/attacher/resizer/snapshotter) talks to the storage API; the node plugin handles stage/publish (format and mount) on each node."
+  },
+  {
+    "type": "single",
+    "q": "Which statement about VolumeSnapshots is correct?",
+    "options": [
+      "They work with any StorageClass, including kind's local-path",
+      "They require the snapshot CRDs and controller plus a CSI driver with snapshot support, and give crash-consistent copies",
+      "They are application-consistent for databases by default",
+      "They replace the need for `pg_dump` and WAL archiving"
+    ],
+    "answer": 1,
+    "explain": "Snapshots need CSI support (local-path has none). They are crash-consistent; databases recover via WAL replay, but you still want logical dumps and point-in-time recovery for a complete strategy."
+  },
+  {
+    "type": "single",
+    "q": "Your team asks whether to run the production PostgreSQL for `shipit` in your EKS cluster. Which answer best reflects good practice?",
+    "options": [
+      "Always run it in Kubernetes; managed databases are legacy",
+      "A plain StatefulSet with 3 replicas gives you HA for free",
+      "Prefer RDS/Aurora unless you need portability, many small databases, or tighter cost control and can operate it; if you run it in-cluster, use an operator like CloudNativePG with off-cluster backups",
+      "Never run any database on Kubernetes"
+    ],
+    "answer": 2,
+    "explain": "Operators make in-cluster databases viable, but you own upgrades, backups, restores and on-call. Managed services shift that burden. The right choice depends on requirements and skills."
+  }
+]

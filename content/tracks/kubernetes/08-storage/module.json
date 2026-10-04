@@ -1,0 +1,24 @@
+{
+  "title": "Storage: Volumes, PVs & StatefulSets",
+  "summary": "Give pods data that outlives containers: ephemeral volumes, PersistentVolumes and Claims, StorageClasses and dynamic provisioning, StatefulSets running PostgreSQL, CSI drivers like EBS, snapshots and backups, and why databases on Kubernetes need operators and care.",
+  "level": "intermediate",
+  "estimatedMinutes": 210,
+  "objectives": [
+    "Choose between emptyDir, hostPath, configMap/secret/projected and persistent volumes",
+    "Explain the PV/PVC/StorageClass model and how dynamic provisioning and binding work",
+    "Use access modes, reclaim policies and `volumeBindingMode: WaitForFirstConsumer` correctly",
+    "Run PostgreSQL in a StatefulSet with volumeClaimTemplates and a headless Service",
+    "Debug Pending PVCs and silent data loss caused by wrong mount paths",
+    "Describe CSI drivers, the EBS CSI driver on EKS, VolumeSnapshots and backup strategies",
+    "Argue when to run a database on Kubernetes (with an operator like CloudNativePG) and when to use a managed service"
+  ],
+  "resources": [
+    { "title": "Kubernetes docs: Volumes", "url": "https://kubernetes.io/docs/concepts/storage/volumes/", "type": "docs", "note": "All volume types, including emptyDir, hostPath and projected." },
+    { "title": "Kubernetes docs: Persistent Volumes", "url": "https://kubernetes.io/docs/concepts/storage/persistent-volumes/", "type": "docs", "note": "PV/PVC lifecycle, access modes, reclaim policies, expansion." },
+    { "title": "Kubernetes docs: Storage Classes", "url": "https://kubernetes.io/docs/concepts/storage/storage-classes/", "type": "docs", "note": "Provisioners, parameters, volumeBindingMode." },
+    { "title": "Kubernetes docs: StatefulSets", "url": "https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/", "type": "docs", "note": "Stable identity, ordered rollout, volumeClaimTemplates and PVC retention." },
+    { "title": "Amazon EBS CSI driver", "url": "https://github.com/kubernetes-sigs/aws-ebs-csi-driver", "type": "tool", "note": "The CSI driver behind gp3 volumes on EKS." },
+    { "title": "CloudNativePG", "url": "https://cloudnative-pg.io/", "type": "tool", "note": "CNCF operator for running PostgreSQL on Kubernetes with failover and backups." },
+    { "title": "postgres official image", "url": "https://hub.docker.com/_/postgres", "type": "docs", "note": "Env vars, PGDATA and the volume layout change in PostgreSQL 18." }
+  ]
+}

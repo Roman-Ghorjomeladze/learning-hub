@@ -1,0 +1,17 @@
+[
+  { "front": "The three rules of the Kubernetes network model", "back": "Every pod has its own IP; pods reach each other across nodes without NAT; node agents can reach pods on their node. A CNI plugin implements it." },
+  { "front": "What is a ClusterIP?", "back": "A virtual IP allocated to a Service from the service CIDR. No interface owns it; kube-proxy rules DNAT connections to a Ready backend pod." },
+  { "front": "port vs targetPort vs nodePort", "back": "`port`: Service port for clients. `targetPort`: port (or named port) the pod listens on. `nodePort`: port opened on every node (30000–32767) for NodePort/LoadBalancer." },
+  { "front": "What are EndpointSlices?", "back": "Objects listing a Service's backend IPs/ports with conditions `ready`, `serving`, `terminating`. Created by the EndpointSlice controller from the selector; linked by label `kubernetes.io/service-name`." },
+  { "front": "Five Service types/variants", "back": "ClusterIP (internal), NodePort (port on every node), LoadBalancer (external LB via a cloud controller), ExternalName (DNS CNAME), headless (`clusterIP: None`, pod IPs in DNS)." },
+  { "front": "Service without a selector", "back": "No automatic endpoints; you create an EndpointSlice (label `kubernetes.io/service-name: <svc>`) pointing at any IPs, e.g. an external VM or database." },
+  { "front": "kube-proxy modes", "back": "iptables (default, random-probability chains), nftables (stable since v1.33, successor), ipvs (deprecated since v1.35). eBPF CNIs like Cilium can replace kube-proxy." },
+  { "front": "Why don't long-lived connections rebalance across new pods?", "back": "Service load balancing picks a backend per connection (conntrack). HTTP/2, gRPC, DB pools and WebSockets keep one connection to one pod." },
+  { "front": "externalTrafficPolicy: Cluster vs Local", "back": "Cluster: any node forwards to any pod (even spread, extra hop, source IP lost). Local: only local pods serve (client IP preserved; nodes without pods drop traffic)." },
+  { "front": "Service DNS name format", "back": "`<service>.<namespace>.svc.cluster.local`. StatefulSet pods: `<pod>.<headless-svc>.<namespace>.svc.cluster.local`. SRV: `_<port-name>._tcp.<svc>.<ns>.svc.cluster.local`." },
+  { "front": "What does `ndots:5` do?", "back": "Names with fewer than 5 dots are tried with every search domain before being tried as-is, causing extra NXDOMAIN queries for external names. Fix with a trailing dot or lower `ndots`." },
+  { "front": "What is sessionAffinity: ClientIP?", "back": "kube-proxy sends all connections from the same client IP to the same pod for `timeoutSeconds` (default 3 hours). Coarse; prefer stateless apps." },
+  { "front": "LoadBalancer Services on kind", "back": "Run `cloud-provider-kind` (macOS: `sudo cloud-provider-kind --enable-lb-port-mapping`), then reach the `kindccm-*` container's mapped localhost port." },
+  { "front": "Service debugging order", "back": "Pods Ready → EndpointSlice has addresses → targetPort correct → app listens on 0.0.0.0 → pod IP reachable → ClusterIP reachable → DNS resolves → NetworkPolicies." },
+  { "front": "A good network debug pod", "back": "`kubectl run netshoot --image=nicolaka/netshoot --rm -it --restart=Never -- bash`, or attach to a pod: `kubectl debug -it <pod> --image=nicolaka/netshoot --target=<container>`." }
+]

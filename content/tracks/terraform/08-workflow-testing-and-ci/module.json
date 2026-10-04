@@ -1,0 +1,26 @@
+{
+  "title": "Workflow, Testing & CI",
+  "summary": "How teams run Terraform for real: environment layouts (directories vs workspaces), DRY with modules and Terragrunt, linting and misconfiguration scanning, `terraform test` with mocks, pre-commit hooks, GitHub Actions with plan comments and OIDC to AWS, policy as code, drift detection, and provider/Terraform upgrades.",
+  "level": "advanced",
+  "estimatedMinutes": 240,
+  "objectives": [
+    "Choose between per-environment directories and workspaces, and explain the trade-offs",
+    "Keep configurations DRY with modules and know what Terragrunt adds",
+    "Run `terraform fmt`, `validate`, TFLint, Trivy and Checkov, locally and as pre-commit hooks",
+    "Write `.tftest.hcl` files with run blocks, assertions, `expect_failures` and `mock_provider`",
+    "Build a GitHub Actions pipeline that plans on pull requests, comments the plan, and applies on merge using OIDC instead of static AWS keys",
+    "Explain policy as code with OPA/Conftest and Sentinel, and write a simple Rego rule against a plan",
+    "Detect drift with `plan -detailed-exitcode` and `-refresh-only`, and decide how to resolve it",
+    "Apply team practices: plan review, small blast radius, state per component, pinned and regularly upgraded versions"
+  ],
+  "resources": [
+    { "title": "Terraform tests", "url": "https://developer.hashicorp.com/terraform/language/tests", "type": "docs", "note": "`.tftest.hcl` syntax: run blocks, assertions, expect_failures." },
+    { "title": "Test mocking", "url": "https://developer.hashicorp.com/terraform/language/tests/mocking", "type": "docs", "note": "`mock_provider`, `override_resource`, `override_data`, `override_module`." },
+    { "title": "Automate Terraform with GitHub Actions", "url": "https://developer.hashicorp.com/terraform/tutorials/automation/github-actions", "type": "course", "note": "Official tutorial for a PR-plan / merge-apply pipeline." },
+    { "title": "Configuring OpenID Connect in Amazon Web Services", "url": "https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services", "type": "docs", "note": "GitHub's guide to keyless AWS access from Actions." },
+    { "title": "TFLint", "url": "https://github.com/terraform-linters/tflint", "type": "tool", "note": "Linter with provider-specific rulesets (AWS, Google, Azure)." },
+    { "title": "Trivy misconfiguration scanning", "url": "https://trivy.dev/latest/docs/scanner/misconfiguration/", "type": "docs", "note": "Scans Terraform for insecure settings; tfsec's checks live here now." },
+    { "title": "pre-commit-terraform", "url": "https://github.com/antonbabenko/pre-commit-terraform", "type": "tool", "note": "Ready-made pre-commit hooks for fmt, validate, tflint, trivy, docs." },
+    { "title": "Conftest", "url": "https://www.conftest.dev/", "type": "tool", "note": "Run OPA/Rego policies against Terraform plan JSON." }
+  ]
+}

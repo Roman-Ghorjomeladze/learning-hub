@@ -1,0 +1,23 @@
+{
+  "title": "Debugging & Operations",
+  "summary": "A troubleshooting playbook for containers that exit, crash, get OOM-killed, can't be reached or won't build, plus the tools and day-2 operations around them: logs, inspect, events, stats, debug shells, logging drivers and rotation, disk cleanup and monitoring.",
+  "level": "intermediate",
+  "estimatedMinutes": 150,
+  "objectives": [
+    "Read container exit codes (0, 1, 125, 126, 127, 137, 139, 143) and map each to likely causes",
+    "Diagnose containers that exit immediately, crash-loop, get OOMKilled or ignore SIGTERM",
+    "Debug minimal/distroless containers with `docker debug`, netshoot, or a busybox sidecar sharing PID and network namespaces",
+    "Fix 'exec format error' and other architecture mismatches on Apple Silicon",
+    "Configure logging drivers and log rotation, and reclaim disk space safely",
+    "Monitor resource usage with `docker stats`, `docker events`, ctop and lazydocker"
+  ],
+  "resources": [
+    { "title": "docker container inspect", "url": "https://docs.docker.com/reference/cli/docker/container/inspect/", "type": "docs", "note": "State, exit code, OOMKilled, health, mounts, networks." },
+    { "title": "Configure logging drivers", "url": "https://docs.docker.com/engine/logging/configure/", "type": "docs", "note": "json-file, local, rotation options and delivery modes." },
+    { "title": "Prune unused Docker objects", "url": "https://docs.docker.com/engine/manage-resources/pruning/", "type": "docs", "note": "What each prune command removes." },
+    { "title": "docker debug", "url": "https://docs.docker.com/reference/cli/docker/debug/", "type": "docs", "note": "Debug shells for slim and distroless containers (Docker Desktop)." },
+    { "title": "Resource constraints", "url": "https://docs.docker.com/engine/containers/resource_constraints/", "type": "docs", "note": "Memory, CPU and OOM behaviour." },
+    { "title": "lazydocker", "url": "https://github.com/jesseduffield/lazydocker", "type": "tool", "note": "Terminal UI for containers, logs and stats." },
+    { "title": "nicolaka/netshoot", "url": "https://github.com/nicolaka/netshoot", "type": "tool", "note": "Network debugging container." }
+  ]
+}

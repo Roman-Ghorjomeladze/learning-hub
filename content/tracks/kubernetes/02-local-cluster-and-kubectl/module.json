@@ -1,0 +1,25 @@
+{
+  "title": "Local Cluster & kubectl Fluency",
+  "summary": "Build a reusable multi-node kind cluster with port mappings, mounts and local images, master kubeconfig contexts, and become fast and precise with kubectl and k9s.",
+  "level": "beginner",
+  "estimatedMinutes": 180,
+  "objectives": [
+    "Write a kind config with multiple nodes, port mappings, extra mounts and node labels",
+    "Load locally built images into kind and choose the right imagePullPolicy",
+    "Explain kubeconfig clusters, users and contexts, and switch clusters and namespaces safely",
+    "Use get/describe/apply/create/delete/edit/patch/label/annotate confidently",
+    "Extract exactly the data you need with -o wide/yaml/json/jsonpath/custom-columns",
+    "Generate manifests with --dry-run=client -o yaml and preview changes with kubectl diff",
+    "Debug with logs, exec, cp, port-forward, events, top, wait and rollout",
+    "Navigate a cluster quickly with k9s, aliases and shell completion"
+  ],
+  "resources": [
+    { "title": "kind Quick Start", "url": "https://kind.sigs.k8s.io/docs/user/quick-start/", "type": "docs", "note": "Creating clusters, loading images, configuration basics." },
+    { "title": "kind Configuration", "url": "https://kind.sigs.k8s.io/docs/user/configuration/", "type": "docs", "note": "Every field of the kind Cluster config: nodes, port mappings, mounts, networking." },
+    { "title": "kubectl Quick Reference", "url": "https://kubernetes.io/docs/reference/kubectl/quick-reference/", "type": "docs", "note": "The official cheat sheet." },
+    { "title": "JSONPath Support", "url": "https://kubernetes.io/docs/reference/kubectl/jsonpath/", "type": "docs", "note": "Syntax for -o jsonpath templates." },
+    { "title": "Organizing Cluster Access Using kubeconfig Files", "url": "https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/", "type": "docs", "note": "Clusters, users, contexts and KUBECONFIG merging." },
+    { "title": "K9s", "url": "https://k9scli.io/", "type": "tool", "note": "Terminal UI for Kubernetes." },
+    { "title": "kubectx and kubens", "url": "https://github.com/ahmetb/kubectx", "type": "tool", "note": "Fast context and namespace switching." }
+  ]
+}

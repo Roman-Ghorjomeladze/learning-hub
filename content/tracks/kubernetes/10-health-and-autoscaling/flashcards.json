@@ -1,0 +1,17 @@
+[
+  { "front": "startup vs liveness vs readiness probe", "back": "Startup: has it finished starting? (disables the others until it passes; restart if it never does). Liveness: is it stuck? (restart). Readiness: can it take traffic now? (removed from endpoints, no restart)." },
+  { "front": "Probe mechanisms", "back": "`httpGet` (200-399), `tcpSocket` (port opens), `exec` (exit 0; forks a process each time), `grpc` (standard health protocol)." },
+  { "front": "Probe defaults", "back": "`periodSeconds: 10`, `timeoutSeconds: 1`, `failureThreshold: 3`, `successThreshold: 1`, `initialDelaySeconds: 0`. Detection time ~ period x threshold." },
+  { "front": "Golden rule for liveness probes", "back": "Check only the process itself (event loop responds). Never check the DB, Redis or other services, or a dependency blip restarts every replica at once." },
+  { "front": "What happens when a pod is deleted?", "back": "In parallel: endpoints are updated (traffic stops after propagation) and the kubelet runs preStop, sends SIGTERM, waits up to `terminationGracePeriodSeconds` (default 30 s, includes preStop), then SIGKILL." },
+  { "front": "Zero-downtime recipe for a Node API", "back": "preStop sleep 5-10 s, SIGTERM handler (readiness 503, `server.close()`, close pools, safety timeout), grace period > preStop + drain, `maxUnavailable: 0`, exec-form CMD so Node gets the signal." },
+  { "front": "HPA formula", "back": "`desired = ceil(current x currentMetric / target)`, ignored within 10% tolerance; with several metrics the highest result wins. CPU `Utilization` is relative to requests." },
+  { "front": "HPA default behavior", "back": "Scale-up: no stabilization, up to +100% or +4 pods per 15 s (whichever is more). Scale-down: 300 s stabilization window, up to 100% per 15 s. Tune with `spec.behavior`." },
+  { "front": "HPA metric types", "back": "`Resource` and `ContainerResource` (metrics-server), `Pods` and `Object` (custom metrics API), `External` (external metrics API, e.g. queue depth via KEDA or Prometheus Adapter)." },
+  { "front": "HPA and GitOps `replicas`", "back": "Remove `spec.replicas` from the Deployment manifest once an HPA manages it, otherwise every apply resets the replica count." },
+  { "front": "VPA modes", "back": "`Off` (recommendations only), `Initial` (set at pod creation), `Recreate` (evict to apply), `InPlaceOrRecreate` (in-place resize, fallback to eviction). Don't combine with HPA on the same metric." },
+  { "front": "Cluster Autoscaler vs Karpenter", "back": "CA resizes predefined node groups (ASGs). Karpenter provisions individual right-sized instances (NodePool/EC2NodeClass) and consolidates. Both act on Pending pods, use requests, and drain respecting PDBs." },
+  { "front": "What does KEDA add over the HPA?", "back": "Event-source scalers (Redis, SQS, Kafka, Prometheus, cron...), scale to and from zero, and a managed HPA fed by its external metrics API. `ScaledObject` for Deployments, `ScaledJob` for Jobs." },
+  { "front": "Node.js PID 1 signal pitfall", "back": "PID 1 ignores signals it has no handler for, and `npm start`/`sh -c` may not forward SIGTERM. Use `CMD [\"node\", \"dist/main.js\"]` and handle SIGTERM (or use tini)." },
+  { "front": "Load testing tools for watching autoscaling", "back": "k6 (JS scripts, stages, thresholds on error rate/latency) or hey (one-liner). Run in-cluster on kind; watch `kubectl get hpa -w` and `kubectl top pods`." }
+]

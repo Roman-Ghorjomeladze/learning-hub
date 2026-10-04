@@ -1,0 +1,24 @@
+{
+  "title": "Security: RBAC, Pod Hardening & Policies",
+  "summary": "Control who can do what (authn, RBAC, ServiceAccounts), what pods are allowed to do (securityContext, Pod Security Admission), who can talk to whom (NetworkPolicies) and what may enter the cluster at all (admission policies, image security).",
+  "level": "advanced",
+  "estimatedMinutes": 240,
+  "objectives": [
+    "Explain the API request path: authentication, authorization, admission",
+    "Grant least-privilege access with Role/ClusterRole and bindings, and verify it with kubectl auth can-i",
+    "Use ServiceAccounts and bound, projected tokens correctly, and disable token mounting when not needed",
+    "Harden pods with securityContext and enforce Pod Security Standards with namespace labels",
+    "Write default-deny NetworkPolicies and allow traffic by pod and namespace labels",
+    "Enforce custom rules with ValidatingAdmissionPolicy (CEL) and know when to reach for Kyverno or Gatekeeper",
+    "Describe image supply-chain controls and how pods get AWS credentials on EKS (IRSA, Pod Identity)"
+  ],
+  "resources": [
+    { "title": "Using RBAC Authorization", "url": "https://kubernetes.io/docs/reference/access-authn-authz/rbac/", "type": "docs", "note": "The reference for Roles, ClusterRoles, bindings and default roles." },
+    { "title": "Configure a Security Context for a Pod or Container", "url": "https://kubernetes.io/docs/tasks/configure-pod-container/security-context/", "type": "docs", "note": "Every securityContext field with examples." },
+    { "title": "Pod Security Standards", "url": "https://kubernetes.io/docs/concepts/security/pod-security-standards/", "type": "spec", "note": "Exactly what privileged, baseline and restricted forbid." },
+    { "title": "Network Policies", "url": "https://kubernetes.io/docs/concepts/services-networking/network-policies/", "type": "docs", "note": "Semantics of podSelector, namespaceSelector, ingress and egress rules." },
+    { "title": "Validating Admission Policy", "url": "https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/", "type": "docs", "note": "In-process CEL policies, stable since Kubernetes 1.30." },
+    { "title": "Kyverno documentation", "url": "https://kyverno.io/docs/", "type": "docs", "note": "Kubernetes-native policy engine (validate, mutate, generate, verify images)." },
+    { "title": "EKS Pod Identity", "url": "https://docs.aws.amazon.com/eks/latest/userguide/pod-identities.html", "type": "docs", "note": "How pods get IAM credentials on EKS without node-wide roles." }
+  ]
+}

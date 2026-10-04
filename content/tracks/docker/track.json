@@ -1,0 +1,12 @@
+{
+  "title": "Docker",
+  "tagline": "Build, run, ship and debug containers with confidence.",
+  "description": "From what a container really is (namespaces, cgroups, layered filesystems) to production-grade multi-stage, multi-arch images, Compose stacks, security hardening and a troubleshooting playbook. Every module ends with labs you run on your Mac.",
+  "accent": "#1D63ED",
+  "level": "Beginner → Advanced",
+  "prerequisites": [],
+  "pages": [
+    { "id": "cheatsheet", "title": "Cheatsheet", "file": "cheatsheet.md" },
+    { "id": "interview", "title": "Interview questions", "file": "interview.md" }
+  ]
+}

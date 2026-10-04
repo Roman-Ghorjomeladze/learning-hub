@@ -1,0 +1,172 @@
+[
+  {
+    "type": "single",
+    "q": "Which description of a container is most accurate?",
+    "options": [
+      "A Linux process (tree) isolated by namespaces, limited by cgroups, with its own root filesystem and reduced privileges, running on the shared host kernel",
+      "A lightweight virtual machine with its own minimal kernel",
+      "A compressed archive that the Docker daemon interprets at runtime",
+      "A chroot jail with a separate network stack"
+    ],
+    "answer": 0,
+    "explain": "There is no container object in the kernel. Runtimes combine namespaces, cgroups, an overlay root filesystem and security features (capabilities, seccomp, LSMs) around ordinary processes. All containers share the host kernel."
+  },
+  {
+    "type": "multi",
+    "q": "Which namespaces does a default `docker run` create new for the container? (select all)",
+    "options": [
+      "mnt",
+      "uts",
+      "user",
+      "pid",
+      "net"
+    ],
+    "answer": [
+      0,
+      1,
+      3,
+      4
+    ],
+    "explain": "Docker creates new pid, net, mnt, uts, ipc and (on cgroup v2) cgroup namespaces. The user namespace is NOT used by default — container root is host root with fewer capabilities — unless you enable `userns-remap` or run rootless."
+  },
+  {
+    "type": "single",
+    "q": "A Node.js container ignores `docker stop` and is killed after 10 seconds with exit code 137. The app has no signal handlers. What is the root cause?",
+    "options": [
+      "Node.js cannot receive signals inside containers",
+      "The app is PID 1 in its PID namespace, and the kernel does not apply the default action (terminate) for signals PID 1 has no handler for",
+      "Docker sends SIGKILL first, then SIGTERM",
+      "The container's cgroup blocks signals"
+    ],
+    "answer": 1,
+    "explain": "PID 1 is special: unhandled signals are ignored instead of terminating it. `docker stop` sends SIGTERM, waits the grace period, then SIGKILL (137 = 128 + 9). Fix by handling SIGTERM in Node or running with `--init` (tini) as PID 1."
+  },
+  {
+    "type": "single",
+    "q": "Inside a container started with `--memory 256m`, `free -m` reports 7,800 MB total. Why?",
+    "options": [
+      "The memory limit failed to apply",
+      "The limit applies only to the V8 heap",
+      "Docker only enforces memory limits when swap is disabled",
+      "`free` reads `/proc/meminfo`, which reflects the host/VM; the limit lives in the cgroup (`/sys/fs/cgroup/memory.max`)"
+    ],
+    "answer": 3,
+    "explain": "`/proc/meminfo` is not namespaced for memory. The real limit is in `memory.max`. Runtimes and monitoring tools must read cgroup files — a classic source of mis-sized heaps and thread pools."
+  },
+  {
+    "type": "single",
+    "q": "A container's API has p99 latency spikes. It runs with `--cpus 1` and average CPU usage is 40%. Which file best confirms CPU throttling?",
+    "options": [
+      "`/sys/fs/cgroup/memory.events`",
+      "`/proc/cpuinfo`",
+      "`/sys/fs/cgroup/cpu.stat` (`nr_throttled`, `throttled_usec`)",
+      "`/sys/fs/cgroup/pids.max`"
+    ],
+    "answer": 2,
+    "explain": "CFS quota is enforced per 100 ms period. Bursty work can exhaust the quota early in a period and wait for the next, even if the average is low. `cpu.stat` counts throttled periods and time; in Kubernetes, cAdvisor exposes them as `container_cpu_cfs_throttled_*`."
+  },
+  {
+    "type": "single",
+    "q": "A Dockerfile has `RUN curl -o /tmp/sdk.tar.gz ... && tar -xzf /tmp/sdk.tar.gz` followed by a separate `RUN rm /tmp/sdk.tar.gz`. What happens to image size?",
+    "options": [
+      "The archive's bytes are removed from the image",
+      "The build fails because files cannot be deleted in a later layer",
+      "BuildKit automatically squashes the two layers",
+      "The archive still ships in the earlier layer; the later layer only adds a whiteout that hides it"
+    ],
+    "answer": 3,
+    "explain": "Layers are immutable and additive. Deleting a file in a later layer creates a whiteout entry; the bytes remain in the lower layer. Download, use and delete in the same `RUN`, or use a multi-stage build."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about overlayfs in containers are true? (select all)",
+    "options": [
+      "Volumes bypass overlayfs, which makes them better for database data",
+      "Modifying a file from an image layer first copies the whole file into the writable layer (copy-up)",
+      "The writable layer survives `docker rm`",
+      "Image layers are shared between containers and images that use them"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "Copy-up happens on first write; lower layers are read-only and content-addressed, so they're shared. The writable layer is deleted with the container. Volumes are plain directories mounted into the container, avoiding copy-on-write overhead."
+  },
+  {
+    "type": "single",
+    "q": "In Docker's architecture, which component is the parent of your running container process?",
+    "options": [
+      "containerd-shim-runc-v2",
+      "containerd",
+      "runc",
+      "dockerd"
+    ],
+    "answer": 0,
+    "explain": "runc sets up the container and then exits; the shim remains as the parent, holding stdio and collecting the exit status. That is what lets dockerd and containerd restart without killing containers (live-restore)."
+  },
+  {
+    "type": "single",
+    "q": "Kubernetes removed dockershim in v1.24. Why did images built with `docker build` keep working on clusters using containerd?",
+    "options": [
+      "Kubernetes converts Docker images at pull time",
+      "They didn't; all images had to be rebuilt",
+      "containerd embeds a copy of dockerd",
+      "Docker images are OCI-compliant images, and containerd runs any OCI image via an OCI runtime such as runc"
+    ],
+    "answer": 3,
+    "explain": "Only the integration (dockershim) was removed. The images follow the OCI image spec, and containerd (via its CRI plugin) pulls them and runs them with runc — the same runtime Docker uses underneath."
+  },
+  {
+    "type": "single",
+    "q": "What does an OCI image index (manifest list) contain?",
+    "options": [
+      "The compressed filesystem layers",
+      "A list of platform-specific manifests (e.g. linux/amd64, linux/arm64), each referenced by digest",
+      "The container's runtime configuration (`config.json`)",
+      "The registry credentials"
+    ],
+    "answer": 1,
+    "explain": "An index lets one tag serve multiple platforms. Each entry points to a manifest, which points to a config blob and layer blobs. The client picks the manifest matching its platform — why your Mac pulls arm64 automatically."
+  },
+  {
+    "type": "single",
+    "q": "Your production image is distroless (no shell, no curl). You need to check which ports the app listens on inside its network namespace on a Linux host. Which approach works?",
+    "options": [
+      "`docker exec app ss -ltn`",
+      "`sudo nsenter -t $(docker inspect -f '{{.State.Pid}}' app) -n ss -ltn` on the host",
+      "`docker attach app` and type `ss -ltn`",
+      "Rebuild the image with debugging tools"
+    ],
+    "answer": 1,
+    "explain": "`nsenter -n` joins only the network namespace while keeping the host's filesystem and tools. `docker exec` would need `ss` inside the image. `docker run --network container:app nicolaka/netshoot` is another Docker-native way to do the same."
+  },
+  {
+    "type": "multi",
+    "q": "Which are real security differences between containers and VMs? (select all)",
+    "options": [
+      "Without user namespaces, root in a container is UID 0 on the host kernel",
+      "`--privileged` disables most container isolation mechanisms",
+      "VMs cannot be escaped under any circumstances",
+      "Containers share the host kernel, so a kernel vulnerability can allow a container escape"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "The shared kernel is the key difference. Root mapping, capabilities and seccomp reduce risk; `--privileged` removes most of it. VMs have a much smaller attack surface (the hypervisor), but hypervisor escapes do exist — 'never' is wrong."
+  },
+  {
+    "type": "single",
+    "q": "A container exited with code 137 and `docker inspect` shows `\"OOMKilled\": true`, but the host has 10 GB free. What happened?",
+    "options": [
+      "The host OOM killer ran because of fragmentation",
+      "Exit code 137 means the image was corrupt",
+      "Docker killed the container because it exceeded `--memory-reservation`",
+      "The container's cgroup reached its `memory.max`, so the kernel OOM-killed a process inside that cgroup"
+    ],
+    "answer": 3,
+    "explain": "Memory limits are enforced per cgroup. Free host memory does not matter once a container hits its own limit. 137 = 128 + SIGKILL. Measure real usage and remember that off-heap memory (Buffers, native code) counts too."
+  }
+]

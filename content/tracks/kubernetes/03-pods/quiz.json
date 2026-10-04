@@ -1,0 +1,166 @@
+[
+  {
+    "type": "single",
+    "q": "A pod shows STATUS `CrashLoopBackOff`. What is its `status.phase`?",
+    "options": [
+      "`Failed`",
+      "`Running`",
+      "`Pending`",
+      "`CrashLoopBackOff`"
+    ],
+    "answer": 1,
+    "explain": "The pod is bound and its container keeps being restarted in place, so the phase stays `Running`. `CrashLoopBackOff` is a container `Waiting` reason that kubectl surfaces in the computed STATUS column."
+  },
+  {
+    "type": "single",
+    "q": "A Node.js container restarts repeatedly. `describe` shows `Last State: Terminated, Reason: OOMKilled, Exit Code: 137`. What is the most appropriate first fix?",
+    "options": [
+      "Raise the memory limit and/or cap the V8 heap below it (e.g. `--max-old-space-size`), then look for a leak",
+      "Increase `terminationGracePeriodSeconds`",
+      "Add a CPU limit",
+      "Change `restartPolicy` to `OnFailure`"
+    ],
+    "answer": 0,
+    "explain": "OOMKilled means the container exceeded its memory limit and the kernel killed it (128 + SIGKILL 9 = 137). Size the limit realistically and keep the heap below it so V8 collects garbage before the cgroup limit is hit."
+  },
+  {
+    "type": "single",
+    "q": "Your Dockerfile has `ENTRYPOINT [\"node\"]` and `CMD [\"dist/main.js\"]`. The pod spec sets only `command: [\"npm\"]`. What runs?",
+    "options": [
+      "`node dist/main.js`",
+      "`npm dist/main.js`",
+      "`npm`",
+      "`node npm`"
+    ],
+    "answer": 2,
+    "explain": "`command` replaces ENTRYPOINT, and when `command` is set the image's CMD is ignored too. Only `args` would be used as arguments, and none were given."
+  },
+  {
+    "type": "multi",
+    "q": "Which are true for **native sidecar containers** (init containers with `restartPolicy: Always`)? (select all)",
+    "options": [
+      "They start before the main containers and keep running alongside them",
+      "The main containers wait until the sidecar exits successfully",
+      "They are stopped after the main containers during termination",
+      "They do not prevent a Job's pod from completing"
+    ],
+    "answer": [
+      0,
+      2,
+      3
+    ],
+    "explain": "A native sidecar only has to *start* (and pass its startup probe, if defined) before the next container starts. It runs for the pod's lifetime, is terminated after the main containers, and does not block Job completion."
+  },
+  {
+    "type": "single",
+    "q": "Deleting your API pods takes exactly 30 seconds each during every rollout, and logs show no shutdown message. What is the most likely cause?",
+    "options": [
+      "The readiness probe is too slow",
+      "The Node.js process runs as PID 1 without a SIGTERM handler, so the signal is ignored until SIGKILL after the 30 s grace period",
+      "The image is too large",
+      "kube-proxy is in iptables mode"
+    ],
+    "answer": 1,
+    "explain": "PID 1 gets no default signal actions. Without a handler, SIGTERM does nothing; the kubelet waits `terminationGracePeriodSeconds` (default 30) and then SIGKILLs. Add a SIGTERM handler that drains and exits, and use exec-form CMD."
+  },
+  {
+    "type": "single",
+    "q": "Why add a short `preStop` sleep to a web server that already handles SIGTERM correctly?",
+    "options": [
+      "To give the image time to be garbage-collected",
+      "Because SIGTERM is only sent after preStop fails",
+      "To extend the grace period beyond its maximum",
+      "Because endpoint removal and SIGTERM happen in parallel; the delay lets kube-proxy and load balancers stop sending new traffic before the server closes"
+    ],
+    "answer": 3,
+    "explain": "When a pod starts terminating, it is removed from EndpointSlices while the kubelet starts the shutdown. Rules on every node update a moment later, so an instant shutdown drops connections. A few seconds of preStop delay closes that race. The preStop time counts towards the grace period."
+  },
+  {
+    "type": "single",
+    "q": "Two containers in the same pod both try to listen on port 8080. What happens?",
+    "options": [
+      "Kubernetes remaps the second one to a random port",
+      "Both work because each container has its own network namespace",
+      "The second fails to bind (address in use) because the pod shares one network namespace",
+      "The pod is rejected by the API server"
+    ],
+    "answer": 2,
+    "explain": "All containers in a pod share the pause container's network namespace: one IP, one port space, one localhost. The API server does not validate this; the process fails at runtime."
+  },
+  {
+    "type": "single",
+    "q": "Your init container `migrate` keeps failing. With `restartPolicy: Always` on the pod, what does the kubelet do?",
+    "options": [
+      "Retries the init container with back-off; app containers never start until it succeeds",
+      "Skips it and starts the app containers",
+      "Marks the pod `Failed` immediately",
+      "Runs the app containers and the init container in parallel"
+    ],
+    "answer": 0,
+    "explain": "Init containers must all succeed, in order, before app containers start. With `Always` (or `OnFailure`), failing init containers are retried with back-off; STATUS shows `Init:CrashLoopBackOff`."
+  },
+  {
+    "type": "multi",
+    "q": "Which values can the downward API expose to a container? (select all)",
+    "options": [
+      "The pod's name and namespace",
+      "The pod IP and node name",
+      "The container's memory limit",
+      "The IPs of other pods behind the same Service"
+    ],
+    "answer": [
+      0,
+      1,
+      2
+    ],
+    "explain": "Via `fieldRef` (metadata, `status.podIP`, `spec.nodeName`, labels/annotations) and `resourceFieldRef` (requests/limits). Information about other pods requires the Kubernetes API or DNS."
+  },
+  {
+    "type": "single",
+    "q": "You change a pod's label that is exposed both as an env var and in a `downwardAPI` volume. What do you observe?",
+    "options": [
+      "Both update within a minute",
+      "Neither updates until the pod is recreated",
+      "The env var updates; the file does not",
+      "The volume file updates; the env var keeps its old value until the container restarts"
+    ],
+    "answer": 3,
+    "explain": "Environment variables are fixed at container start. The kubelet refreshes downwardAPI volume files in place."
+  },
+  {
+    "type": "single",
+    "q": "Your liveness probe calls `/healthz`, which checks Postgres. Postgres fails over for 20 seconds. What is the likely result?",
+    "options": [
+      "Pods are removed from the Service until Postgres returns, then added back",
+      "All API pods fail liveness at once and get restarted, turning a short blip into an outage",
+      "Nothing, because liveness probes ignore HTTP 503",
+      "Only the pod that first noticed the failure restarts"
+    ],
+    "answer": 1,
+    "explain": "Liveness failures restart containers. Checking a shared dependency there makes every replica fail together. Dependencies belong in readiness (which only removes pods from endpoints); liveness should only detect a stuck process."
+  },
+  {
+    "type": "single",
+    "q": "You need to inspect a running pod built from a distroless image (no shell). What is the right tool?",
+    "options": [
+      "`kubectl exec -it pod -- sh`",
+      "`kubectl attach pod`",
+      "`kubectl debug -it pod --image=busybox --target=<container>` (ephemeral container)",
+      "Rebuild the image with a shell and redeploy to production"
+    ],
+    "answer": 2,
+    "explain": "Ephemeral containers are added to the running pod, share its network namespace, and with `--target` its process namespace too, so you can see the app's processes and reach it on localhost."
+  },
+  {
+    "type": "single",
+    "q": "Why should you rarely create bare Pods for applications?",
+    "options": [
+      "Nothing recreates them if they or their node die, and they offer no rollouts or scaling",
+      "Bare pods cannot have more than one container",
+      "Bare pods cannot be exposed by Services",
+      "Bare pods are always BestEffort QoS"
+    ],
+    "answer": 0,
+    "explain": "A bare pod has no controller. Deployments, StatefulSets, DaemonSets and Jobs recreate pods, roll out changes and scale. Bare pods are fine for one-off debugging."
+  }
+]

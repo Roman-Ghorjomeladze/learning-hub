@@ -1,0 +1,23 @@
+{
+  "title": "Containers Under the Hood",
+  "summary": "What a container really is: ordinary Linux processes isolated by namespaces, limited by cgroups v2 and given their own root filesystem by overlayfs — plus the OCI specs and the CLI → dockerd → containerd → shim → runc chain that makes it happen.",
+  "level": "beginner",
+  "estimatedMinutes": 120,
+  "objectives": [
+    "Explain a container as a process with namespaces, cgroups, a layered root filesystem and reduced privileges",
+    "Name the seven namespace types Docker uses and what each isolates",
+    "Read cgroup v2 files (memory.max, cpu.max, pids.max, memory.events, cpu.stat) to understand limits and throttling",
+    "Describe how overlayfs layers, copy-on-write and whiteouts turn an image into a container filesystem",
+    "Describe the OCI image and runtime specs and the role of dockerd, containerd, the shim and runc",
+    "Compare containers and virtual machines, including their security trade-offs"
+  ],
+  "resources": [
+    { "title": "Docker overview (architecture)", "url": "https://docs.docker.com/get-started/docker-overview/", "type": "docs", "note": "Client, daemon, registries, images and containers." },
+    { "title": "namespaces(7) man page", "url": "https://man7.org/linux/man-pages/man7/namespaces.7.html", "type": "docs", "note": "The authoritative description of every namespace type." },
+    { "title": "Control Group v2 (Linux kernel docs)", "url": "https://docs.kernel.org/admin-guide/cgroup-v2.html", "type": "docs", "note": "Every cgroup v2 file explained, including memory.events and cpu.max." },
+    { "title": "OCI Image Format Specification", "url": "https://github.com/opencontainers/image-spec", "type": "spec", "note": "Index, manifest, config and layer formats." },
+    { "title": "OCI Runtime Specification", "url": "https://github.com/opencontainers/runtime-spec", "type": "spec", "note": "The bundle (config.json + rootfs) that runc executes." },
+    { "title": "containerd", "url": "https://containerd.io/", "type": "docs", "note": "The CNCF container runtime underneath Docker and most Kubernetes nodes." },
+    { "title": "runc", "url": "https://github.com/opencontainers/runc", "type": "tool", "note": "The reference OCI runtime." }
+  ]
+}

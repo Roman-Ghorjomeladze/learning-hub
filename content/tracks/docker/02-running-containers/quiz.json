@@ -1,0 +1,170 @@
+[
+  {
+    "type": "single",
+    "q": "What is the difference between `docker start api` and `docker run ... --name api2 <image>`?",
+    "options": [
+      "None; `start` is an alias of `run`",
+      "`run` can only be used once per image",
+      "`start` pulls the newest image first",
+      "`start` restarts an existing container with its writable layer and logs; `run` always creates a new container from the image"
+    ],
+    "answer": 3,
+    "explain": "`docker run` = create + start. `docker start` resumes an exited container: same ID, same filesystem changes, same log file. That's why logs from earlier runs are still visible after a restart."
+  },
+  {
+    "type": "single",
+    "q": "Your Express app in a container listens with `app.listen(3000, 'localhost')`. You run `docker run -p 3000:3000 ...` and `curl localhost:3000` from the Mac fails with 'connection reset'. Why?",
+    "options": [
+      "Port 3000 is reserved on macOS",
+      "The app listens on the container's loopback only; published traffic arrives on the container's `eth0`, so the app must bind `0.0.0.0`",
+      "You also need `EXPOSE 3000` in the Dockerfile",
+      "`-p` requires the `127.0.0.1:` prefix"
+    ],
+    "answer": 1,
+    "explain": "`localhost` inside the container is the container's own loopback interface. Forwarded traffic comes in on `eth0`. Bind to `0.0.0.0` (or omit the host). `EXPOSE` is documentation only."
+  },
+  {
+    "type": "single",
+    "q": "`app.env` contains `API_KEY=\"abc123\"`. The app started with `docker run --env-file app.env` fails authentication. Most likely cause?",
+    "options": [
+      "`--env-file` ignores lines with quotes",
+      "`--env-file` keeps the quotes literally, so the value is `\"abc123\"` including quote characters",
+      "Env files must be named `.env`",
+      "Variables from env files are only available at build time"
+    ],
+    "answer": 1,
+    "explain": "`docker run --env-file` does no quote processing or variable expansion. Compose's env-file handling strips quotes, so the same file can behave differently. Remove the quotes for `docker run`."
+  },
+  {
+    "type": "single",
+    "q": "Which restart policy restarts a container after the Docker daemon restarts even if you had stopped it manually with `docker stop`?",
+    "options": [
+      "`no`",
+      "`always`",
+      "`unless-stopped`",
+      "`on-failure`"
+    ],
+    "answer": 1,
+    "explain": "`always` respects a manual stop only until the daemon restarts, then starts the container again. `unless-stopped` remembers the manual stop. `on-failure` only reacts to non-zero exits."
+  },
+  {
+    "type": "single",
+    "q": "A NestJS container takes exactly 10 seconds to stop on every deploy and exits with 137. The Dockerfile uses `CMD npm run start:prod`. What's the best fix?",
+    "options": [
+      "Increase the stop timeout to 60 seconds",
+      "Use `docker kill` instead of `docker stop` in the deploy script",
+      "Use exec-form `CMD [\"node\", \"dist/main.js\"]`, call `app.enableShutdownHooks()`, and add an init (`--init` or tini)",
+      "Add `EXPOSE 3000` so Docker knows how to stop it"
+    ],
+    "answer": 2,
+    "explain": "Shell form wraps the command in `/bin/sh -c`, and npm adds another layer; SIGTERM never reaches Node's application handlers, so Docker SIGKILLs after 10 s. Run node directly in exec form, handle SIGTERM (Nest's shutdown hooks) and use an init for signal forwarding and zombie reaping."
+  },
+  {
+    "type": "multi",
+    "q": "Which exit codes indicate the container never got as far as running your application code normally? (select all)",
+    "options": [
+      "`126`",
+      "`127`",
+      "`125`",
+      "`143`"
+    ],
+    "answer": [
+      0,
+      1,
+      2
+    ],
+    "explain": "125: `docker run` itself failed (bad flag, port conflict). 126: command found but not executable. 127: command not found. 143 = 128 + SIGTERM: the app ran and was terminated by SIGTERM."
+  },
+  {
+    "type": "single",
+    "q": "A container exits with code 139 only when run with `--platform linux/amd64` on your Apple Silicon Mac. What does 139 indicate?",
+    "options": [
+      "Out of memory",
+      "The container was stopped by the user",
+      "The image is missing its CMD",
+      "Killed by SIGSEGV (128 + 11) — a native crash, plausibly an emulation incompatibility"
+    ],
+    "answer": 3,
+    "explain": "139 = 128 + 11 (SIGSEGV). Native binaries (or native Node addons) can crash under emulation. Prefer an arm64 build of the image."
+  },
+  {
+    "type": "single",
+    "q": "You are attached to a container with `docker attach api` and want to leave without stopping it. What do you press?",
+    "options": [
+      "Ctrl-P then Ctrl-Q",
+      "Ctrl-D",
+      "Ctrl-C",
+      "Ctrl-Z"
+    ],
+    "answer": 0,
+    "explain": "Ctrl-P Ctrl-Q is the default detach sequence (for containers started with `-it`). Ctrl-C sends SIGINT to PID 1 and may stop the container; Ctrl-D closes stdin, which ends a shell. For debugging, prefer `docker exec`, which starts a separate process."
+  },
+  {
+    "type": "multi",
+    "q": "A server's disk filled up. `docker system df` shows little image usage. Which are likely culprits and fixes? (select all)",
+    "options": [
+      "Unused volumes — inspect with `docker system df -v` before pruning",
+      "Too many published ports — remove `-p` flags",
+      "Unrotated `json-file` logs of a chatty container — set `max-size`/`max-file` or use the `local` driver",
+      "Build cache — `docker builder prune`"
+    ],
+    "answer": [
+      0,
+      2,
+      3
+    ],
+    "explain": "Default json-file logs are not rotated; build cache and volumes grow silently. Ports consume no disk. Prune volumes carefully — they may contain data."
+  },
+  {
+    "type": "single",
+    "q": "Which command prints the host port mapped to container port 3000 of container `api`?",
+    "options": [
+      "`docker inspect -f '{{.Ports}}' api`",
+      "`docker exec api netstat -ltn`",
+      "`docker ps --port api`",
+      "`docker port api 3000`"
+    ],
+    "answer": 3,
+    "explain": "`docker port api 3000` prints e.g. `0.0.0.0:49153`. The template equivalent is `{{(index .NetworkSettings.Ports \"3000/tcp\" 0).HostPort}}`. `netstat` inside the container shows the container port, not the host mapping."
+  },
+  {
+    "type": "single",
+    "q": "A container runs with `--memory 512m` and Node's heap usage looks fine at ~200 MB, yet it is OOM-killed under load. What's the most likely explanation?",
+    "options": [
+      "Memory outside the V8 heap (Buffers, native addons, thread stacks, code) pushed the cgroup over 512 MiB",
+      "The V8 heap limit was exceeded",
+      "Docker counts swap twice",
+      "The container's CPU limit caused the kill"
+    ],
+    "answer": 0,
+    "explain": "The cgroup limit applies to the whole process (RSS + page cache that can't be reclaimed), not just the heap. Leave headroom (e.g. `--max-old-space-size=384` for 512 MiB) and measure RSS. CPU limits throttle; they never kill."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about `docker exec` are true? (select all)",
+    "options": [
+      "It can run as a different user with `-u`",
+      "It starts a new process inside the container's existing namespaces",
+      "It replaces the container's PID 1",
+      "It only works on running containers"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "`exec` uses `setns()` to join the namespaces of a running container and starts an additional process. PID 1 is unaffected. Use `docker cp` or `docker start` for stopped containers."
+  },
+  {
+    "type": "single",
+    "q": "A script creates temporary containers. What's the safest way to remove only those, even if other containers exist?",
+    "options": [
+      "`docker rm -f $(docker ps -aq)`",
+      "`docker system prune -a`",
+      "Label them (e.g. `--label job=tmp`) and run `docker rm -f $(docker ps -aq --filter label=job=tmp)`",
+      "Give them random names and remove the newest ones"
+    ],
+    "answer": 2,
+    "explain": "Labels make targeting precise; filters work on `ps`, `prune` and most list commands. The other options remove unrelated containers (or images and caches)."
+  }
+]

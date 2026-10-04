@@ -1,0 +1,24 @@
+{
+  "title": "Kubernetes Architecture",
+  "summary": "Why Kubernetes exists, how desired state and reconciliation loops work, and what every control-plane and node component actually does when you run `kubectl apply`.",
+  "level": "beginner",
+  "estimatedMinutes": 150,
+  "objectives": [
+    "Explain declarative desired state and how controllers reconcile actual state towards it",
+    "Describe the job of kube-apiserver, etcd, the scheduler, kube-controller-manager and cloud-controller-manager",
+    "Describe the job of the kubelet, the container runtime (CRI/containerd) and kube-proxy",
+    "Walk through every step between `kubectl apply -f deployment.yaml` and a running container",
+    "Read any API object by its apiVersion, kind, metadata, spec and status",
+    "Use namespaces, labels, selectors and annotations correctly",
+    "Explore the Kubernetes API directly with `kubectl get --raw`, `kubectl proxy`, `api-resources` and `explain`"
+  ],
+  "resources": [
+    { "title": "Kubernetes Components", "url": "https://kubernetes.io/docs/concepts/overview/components/", "type": "docs", "note": "Official overview of control-plane and node components." },
+    { "title": "Cluster Architecture", "url": "https://kubernetes.io/docs/concepts/architecture/", "type": "docs", "note": "Nodes, controllers, leases, garbage collection and more." },
+    { "title": "Controllers", "url": "https://kubernetes.io/docs/concepts/architecture/controller/", "type": "docs", "note": "The control loop pattern explained by the project." },
+    { "title": "Objects in Kubernetes", "url": "https://kubernetes.io/docs/concepts/overview/working-with-objects/", "type": "docs", "note": "spec vs status, names, namespaces, labels, annotations." },
+    { "title": "The Kubernetes API", "url": "https://kubernetes.io/docs/concepts/overview/kubernetes-api/", "type": "docs", "note": "API groups, versions and discovery." },
+    { "title": "kind", "url": "https://kind.sigs.k8s.io/", "type": "tool", "note": "Kubernetes in Docker: the local cluster used throughout this track." },
+    { "title": "etcd documentation", "url": "https://etcd.io/docs/", "type": "docs", "note": "The key-value store behind every cluster." }
+  ]
+}

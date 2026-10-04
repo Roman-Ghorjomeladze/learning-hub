@@ -1,0 +1,23 @@
+{
+  "title": "Modules",
+  "summary": "Package configuration into reusable modules: root vs child modules, structure conventions, inputs and outputs, sources (local, registry, Git) and versioning, composition patterns, passing providers, for_each on modules, publishing and documenting with terraform-docs.",
+  "level": "intermediate",
+  "estimatedMinutes": 180,
+  "objectives": [
+    "Explain root vs child modules and how values flow between them through variables and outputs",
+    "Structure a module with main.tf, variables.tf, outputs.tf, versions.tf, README and examples",
+    "Consume modules from local paths, the Terraform Registry and Git with pinned versions or refs",
+    "Design small, composable modules and avoid over-abstraction",
+    "Pass default and aliased provider configurations into modules and use for_each/count on module calls",
+    "Refactor existing resources into a module with moved blocks, and document modules with terraform-docs"
+  ],
+  "resources": [
+    { "title": "Modules overview", "url": "https://developer.hashicorp.com/terraform/language/modules", "type": "docs", "note": "What modules are and how they're called." },
+    { "title": "Module sources", "url": "https://developer.hashicorp.com/terraform/language/modules/sources", "type": "docs", "note": "Local paths, registry, GitHub, generic Git with ref, S3/GCS and archives." },
+    { "title": "Module development: standard structure", "url": "https://developer.hashicorp.com/terraform/language/modules/develop/structure", "type": "docs", "note": "The recommended file layout for reusable modules." },
+    { "title": "Module composition", "url": "https://developer.hashicorp.com/terraform/language/modules/develop/composition", "type": "docs", "note": "Dependency inversion and keeping module trees flat." },
+    { "title": "Providers within modules", "url": "https://developer.hashicorp.com/terraform/language/modules/develop/providers", "type": "docs", "note": "Provider inheritance, passing aliases and configuration_aliases." },
+    { "title": "Terraform Registry: modules", "url": "https://registry.terraform.io/browse/modules", "type": "tool", "note": "Browse public modules; check downloads, versions and source before using one." },
+    { "title": "terraform-docs", "url": "https://terraform-docs.io/", "type": "tool", "note": "Generate README tables of inputs and outputs from module code." }
+  ]
+}

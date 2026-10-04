@@ -1,0 +1,16 @@
+[
+  { "front": "What does `localhost` mean inside a container?", "back": "The container's own loopback in its own network namespace, not the host and not other containers." },
+  { "front": "How is a container wired to a bridge network?", "back": "A veth pair: one end is `eth0` in the container's namespace, the other is attached to a Linux bridge (virtual switch) on the host. Outbound traffic is masqueraded (SNAT)." },
+  { "front": "Default bridge vs user-defined bridge: two key differences", "back": "User-defined bridges have embedded DNS (resolve container names/aliases) and isolate only attached containers. The default bridge has neither (IP only or deprecated `--link`)." },
+  { "front": "What is 127.0.0.11?", "back": "Docker's embedded DNS server address inside containers on user-defined networks. Resolves container names, aliases and Compose service names; forwards the rest upstream." },
+  { "front": "What two things does `-p 8080:3000` set up on Linux?", "back": "DNAT rules (iptables, or nftables backend) that rewrite host:8080 to containerIP:3000, plus a `docker-proxy` userland process for localhost/hairpin cases." },
+  { "front": "Does `EXPOSE` publish a port?", "back": "No. It's metadata documenting the port and is used by `-P`. Only `-p`/`ports:` publishes." },
+  { "front": "Why can published ports bypass ufw?", "back": "Docker DNATs in the `nat` table before packets reach the INPUT chain ufw manages. Use `127.0.0.1:` bindings or the `DOCKER-USER` chain." },
+  { "front": "How do published ports reach a container on a Mac?", "back": "A forwarder on macOS listens on the host port and relays into the Linux VM, where normal NAT forwards to the container. Container 172.x IPs aren't routable from macOS (except with OrbStack)." },
+  { "front": "Container → service on your Mac: hostname?", "back": "`host.docker.internal`. On Linux Engine add `--add-host=host.docker.internal:host-gateway` (Compose `extra_hosts`)." },
+  { "front": "What does `--network container:api` do?", "back": "Puts the new container in `api`'s network namespace: same interfaces, IPs and `localhost`. Ideal for debugging with netshoot." },
+  { "front": "What does `docker network create --internal` do?", "back": "Creates a bridge with no external gateway: members can talk to each other but not to the outside world." },
+  { "front": "What happens when several containers share a network alias?", "back": "The embedded DNS returns all their IPs (round-robin). No health checks or virtual IP; it's how `compose --scale` works." },
+  { "front": "Top cause of 'published but connection refused'", "back": "The app binds `127.0.0.1` inside the container (or the `-p` maps to the wrong container port). Bind `0.0.0.0` and check `docker port` vs `ss -ltn`." },
+  { "front": "Five network drivers and one use each", "back": "bridge: single-host default. host: share host stack (Linux perf). none: no network. overlay: multi-host (Swarm). macvlan: container gets a LAN IP." }
+]

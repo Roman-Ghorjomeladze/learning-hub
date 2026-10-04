@@ -1,0 +1,22 @@
+{
+  "title": "Networking",
+  "summary": "How containers talk to each other and to the outside world: network drivers, user-defined bridges and embedded DNS, how port publishing really works (NAT, docker-proxy, the Mac VM), and a debugging toolkit built on netshoot.",
+  "level": "intermediate",
+  "estimatedMinutes": 150,
+  "objectives": [
+    "Describe what the bridge, host, none, overlay and macvlan drivers do and when to use each",
+    "Explain why user-defined bridges beat the default bridge (embedded DNS at 127.0.0.11, isolation)",
+    "Explain how `-p` works underneath: iptables/nftables DNAT, docker-proxy, and the extra hop through the VM on macOS",
+    "Connect containers to each other and to services on the host (`host.docker.internal`)",
+    "Use network aliases and multiple networks to model frontend/backend isolation",
+    "Debug connectivity and DNS with netshoot, curl, dig, ss and `docker network inspect`"
+  ],
+  "resources": [
+    { "title": "Networking overview", "url": "https://docs.docker.com/engine/network/", "type": "docs", "note": "Concepts, published ports, DNS and drivers." },
+    { "title": "Bridge network driver", "url": "https://docs.docker.com/engine/network/drivers/bridge/", "type": "docs", "note": "Default vs user-defined bridges in detail." },
+    { "title": "Packet filtering and firewalls", "url": "https://docs.docker.com/engine/network/packet-filtering-firewalls/", "type": "docs", "note": "iptables/nftables rules Docker creates, DOCKER-USER chain, ufw caveat." },
+    { "title": "Docker Desktop networking", "url": "https://docs.docker.com/desktop/features/networking/", "type": "docs", "note": "host.docker.internal, port forwarding and host networking on Mac." },
+    { "title": "nicolaka/netshoot", "url": "https://github.com/nicolaka/netshoot", "type": "tool", "note": "The network troubleshooting Swiss-army container." },
+    { "title": "docker network CLI reference", "url": "https://docs.docker.com/reference/cli/docker/network/", "type": "docs", "note": "create, connect, disconnect, inspect, prune." }
+  ]
+}

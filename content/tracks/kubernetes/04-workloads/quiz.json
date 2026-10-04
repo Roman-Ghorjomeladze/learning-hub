@@ -1,0 +1,167 @@
+[
+  {
+    "type": "single",
+    "q": "A Deployment has `replicas: 4`, `maxSurge: 25%`, `maxUnavailable: 25%`. During a rolling update, what are the maximum total pods and the minimum available pods?",
+    "options": [
+      "6 total, 2 available",
+      "4 total, 4 available",
+      "5 total, 3 available",
+      "5 total, 4 available"
+    ],
+    "answer": 2,
+    "explain": "maxSurge rounds up (25% of 4 = 1, so at most 5 pods) and maxUnavailable rounds down (1, so at least 3 available)."
+  },
+  {
+    "type": "single",
+    "q": "You run `kubectl scale deploy api --replicas=6`. Does this create a new revision in `kubectl rollout history`?",
+    "options": [
+      "No, only changes to `spec.template` create a new ReplicaSet/revision",
+      "Yes, every spec change creates a revision",
+      "Only if `revisionHistoryLimit` is above 0",
+      "Only when using the Recreate strategy"
+    ],
+    "answer": 0,
+    "explain": "Scaling changes `replicas` on the current ReplicaSet. New revisions come from pod template changes (image, env, resources, template labels/annotations)."
+  },
+  {
+    "type": "single",
+    "q": "A new release has a bug that makes `/readyz` return 503. The Deployment uses `maxUnavailable: 0, maxSurge: 1`. What happens?",
+    "options": [
+      "All pods are replaced and users see errors",
+      "Kubernetes automatically rolls back to the previous ReplicaSet",
+      "The Deployment switches to Recreate",
+      "One new pod is created, never becomes Ready, old pods keep serving, and after `progressDeadlineSeconds` the rollout is marked failed"
+    ],
+    "answer": 3,
+    "explain": "The controller can surge one pod but cannot remove old pods until new ones are available. Progress stalls and the `Progressing` condition becomes False with `ProgressDeadlineExceeded`. There is no automatic rollback; run `kubectl rollout undo` or fix forward."
+  },
+  {
+    "type": "single",
+    "q": "When should you use the `Recreate` strategy?",
+    "options": [
+      "For every stateless API to save resources",
+      "When two versions cannot run at the same time, e.g. a single-writer ReadWriteOnce volume or an incompatible schema",
+      "When you need zero downtime",
+      "Only for DaemonSets"
+    ],
+    "answer": 1,
+    "explain": "Recreate stops all old pods before starting new ones. You accept a short outage in exchange for never running two versions concurrently."
+  },
+  {
+    "type": "multi",
+    "q": "What does a StatefulSet guarantee? (select all)",
+    "options": [
+      "Stable pod names like `db-0`, `db-1`",
+      "A PVC per pod from `volumeClaimTemplates`, re-attached when the pod is recreated",
+      "Automatic database replication and failover between replicas",
+      "Ordered creation and deletion by default"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "StatefulSets provide identity, per-pod storage and ordering. Replication, failover and backups are the application's or an operator's job (e.g. CloudNativePG), or use a managed database."
+  },
+  {
+    "type": "single",
+    "q": "What DNS name resolves to the second pod of StatefulSet `kafka` (serviceName `kafka-headless`) in namespace `data`?",
+    "options": [
+      "`kafka-1.kafka-headless.data.svc.cluster.local`",
+      "`kafka-2.data.svc.cluster.local`",
+      "`kafka-headless-1.data.svc.cluster.local`",
+      "`1.kafka.data.pod.cluster.local`"
+    ],
+    "answer": 0,
+    "explain": "Ordinals start at 0, so the second pod is `kafka-1`. Per-pod records have the form `<pod>.<governing headless service>.<namespace>.svc.cluster.local`."
+  },
+  {
+    "type": "single",
+    "q": "You scale a StatefulSet from 3 to 1 replicas with default settings, then back to 3. What happens to `data-db-1` and `data-db-2`?",
+    "options": [
+      "They are deleted on scale-down and recreated empty",
+      "They are merged into `data-db-0`",
+      "They are retained on scale-down and re-attached to `db-1` and `db-2` on scale-up",
+      "They are moved to the ReplicaSet"
+    ],
+    "answer": 2,
+    "explain": "`persistentVolumeClaimRetentionPolicy` defaults to `Retain` for both `whenScaled` and `whenDeleted`, so data is kept and re-used by the pod with the same ordinal."
+  },
+  {
+    "type": "single",
+    "q": "A CronJob runs every 5 minutes, but a run sometimes takes 8 minutes and overlapping runs corrupt data. Which setting fixes the overlap?",
+    "options": [
+      "`startingDeadlineSeconds: 300`",
+      "`concurrencyPolicy: Forbid`",
+      "`successfulJobsHistoryLimit: 1`",
+      "`parallelism: 1`"
+    ],
+    "answer": 1,
+    "explain": "`Forbid` skips a scheduled run while the previous Job is still active. `parallelism` applies within one Job, not across Jobs created by the CronJob. Also make the job idempotent, since CronJobs are at-least-once."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about Jobs are true? (select all)",
+    "options": [
+      "`restartPolicy: Always` is not allowed in a Job's pod template",
+      "With `restartPolicy: Never`, each retry creates a new pod",
+      "`backoffLimit` is the number of retries before the Job is marked Failed",
+      "A Job with `completionMode: Indexed` gives each pod a `JOB_COMPLETION_INDEX` env var"
+    ],
+    "answer": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "explain": "Jobs allow only `Never` or `OnFailure`. `Never` keeps failed pods for inspection and creates new ones. After `backoffLimit` failures the Job gets `BackoffLimitExceeded`. Indexed Jobs expose the index for static sharding."
+  },
+  {
+    "type": "single",
+    "q": "Where should shipit's database migrations run when the API Deployment has 6 replicas?",
+    "options": [
+      "In an init container of the API pods",
+      "In the API's liveness probe",
+      "In a DaemonSet",
+      "In a Job (or a pre-deploy hook) that runs once before the rollout, with backward-compatible schema changes"
+    ],
+    "answer": 3,
+    "explain": "Init containers would run the migration in all 6 pods concurrently and on every restart. A single Job runs it once. Expand/contract migrations keep old and new pods compatible during the rollout."
+  },
+  {
+    "type": "single",
+    "q": "You need a log collector on every node, including newly added nodes. Which controller?",
+    "options": [
+      "Deployment with `replicas` equal to node count",
+      "StatefulSet",
+      "DaemonSet",
+      "CronJob"
+    ],
+    "answer": 2,
+    "explain": "A DaemonSet runs one pod per eligible node and automatically adds pods to new nodes. Add tolerations if it must also run on tainted nodes like control-plane nodes."
+  },
+  {
+    "type": "single",
+    "q": "You implement a canary with Service selector `app=shop`, Deployment `shop-stable` (8 replicas) and `shop-canary` (2 replicas). Roughly what share of new connections go to the canary?",
+    "options": [
+      "20%",
+      "50%",
+      "2%",
+      "It depends on which Deployment was created first"
+    ],
+    "answer": 0,
+    "explain": "The Service load-balances across all Ready pods matching the selector, roughly uniformly per connection: 2 of 10 pods is about 20%. For precise weights use Gateway API HTTPRoute weights, a mesh, or Argo Rollouts."
+  },
+  {
+    "type": "single",
+    "q": "A hotfix was rolled back with `kubectl rollout undo`, but 10 minutes later the broken version is back. The team uses Argo CD. Why?",
+    "options": [
+      "`rollout undo` only lasts 10 minutes",
+      "The HPA re-applied the old template",
+      "revisionHistoryLimit was exceeded",
+      "GitOps synced the Deployment back to what git declares; the rollback must be a git revert"
+    ],
+    "answer": 3,
+    "explain": "`rollout undo` changes the live object, creating drift from git. The GitOps controller reconciles live state back to git. Roll back by reverting the commit."
+  }
+]

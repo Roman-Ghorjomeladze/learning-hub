@@ -1,0 +1,182 @@
+[
+  {
+    "type": "single",
+    "q": "A plan line reads `-/+ resource \"aws_db_instance\" \"main\"` with `identifier = \"shipit\" -> \"shipit-prod\" # forces replacement`. What will apply do?",
+    "options": [
+      "Destroy the existing database and create a new one (data loss unless you planned for it)",
+      "Rename the database in place",
+      "Nothing until you run `terraform refresh`",
+      "Create a second database and keep the old one"
+    ],
+    "answer": 0,
+    "explain": "`-/+` means replace: destroy then create (or create then destroy with `create_before_destroy`). For stateful resources, a forced replacement is a red flag in review; protect them with `prevent_destroy` and deletion protection."
+  },
+  {
+    "type": "single",
+    "q": "You manage subnets with `count = length(var.azs)`. Someone removes the first AZ from the list. What happens?",
+    "options": [
+      "Nothing changes",
+      "Indexes shift, so Terraform plans to replace the remaining subnets as well",
+      "Terraform refuses to plan",
+      "Only the first subnet is destroyed"
+    ],
+    "answer": 1,
+    "explain": "`count` addresses instances by position. Removing an element shifts every later index, causing destroy/create churn. `for_each` keyed by AZ name keeps stable addresses."
+  },
+  {
+    "type": "multi",
+    "q": "Which S3 backend settings give you remote state with locking on Terraform 1.10+ without DynamoDB? (select all)",
+    "options": [
+      "A bucket (or S3-compatible store) that supports conditional writes",
+      "`use_lockfile = true`",
+      "`bucket` and `key`",
+      "`dynamodb_table`"
+    ],
+    "answer": [
+      0,
+      1,
+      2
+    ],
+    "explain": "Native S3 locking writes a `<key>.tflock` object using conditional writes. `dynamodb_table` is the deprecated locking mechanism. S3-compatible stores must support conditional writes for the lock to be effective."
+  },
+  {
+    "type": "single",
+    "q": "You renamed `aws_s3_bucket.logs` to `aws_s3_bucket.access_logs` in code. How do you avoid Terraform destroying and recreating the bucket?",
+    "options": [
+      "Run `terraform apply -replace`",
+      "Add `lifecycle { ignore_changes = all }`",
+      "Add a `moved { from = aws_s3_bucket.logs  to = aws_s3_bucket.access_logs }` block",
+      "Use `depends_on`"
+    ],
+    "answer": 2,
+    "explain": "`moved` blocks record refactors in code so the plan shows a move instead of destroy/create, and they work for everyone running the code (unlike a manual `terraform state mv`)."
+  },
+  {
+    "type": "single",
+    "q": "A bucket was created by hand in the console and should now be managed by Terraform. What is the declarative, reviewable way?",
+    "options": [
+      "Use a data source and treat it as managed",
+      "Write the resource block plus an `import { to = aws_s3_bucket.assets  id = \"bucket-name\" }` block, review the plan, then apply",
+      "Copy the bucket's JSON into `terraform.tfstate`",
+      "Delete it and let Terraform recreate it"
+    ],
+    "answer": 1,
+    "explain": "`import` blocks (Terraform 1.5+) make imports part of a normal plan/apply and code review; `terraform plan -generate-config-out=...` can draft the resource block. Data sources only read; they never manage."
+  },
+  {
+    "type": "single",
+    "q": "In the capstone, why does the `HTTPRoute` live inside the Helm chart rather than in a `kubernetes_manifest` in the platform stack next to the Gateway API CRDs?",
+    "options": [
+      "Traefik ignores routes created by Terraform",
+      "Helm is faster than Terraform",
+      "HTTPRoutes cannot be created by Terraform",
+      "`kubernetes_manifest` needs the HTTPRoute CRD at plan time; in the same stack as the CRDs, a fresh plan would fail"
+    ],
+    "answer": 3,
+    "explain": "Custom resources via `kubernetes_manifest` require their CRD to exist when planning. Rendering them in a Helm release (applied after the CRDs) or putting them in a later stack avoids the two-phase problem."
+  },
+  {
+    "type": "single",
+    "q": "The capstone uses one directory per stack with per-environment `.tfvars` and `.s3.tfbackend` files. What is the main risk of this layout, and how does the wrapper script mitigate it?",
+    "options": [
+      "Applying one environment's variables to another environment's state; mitigated by pairing both files by env name and using a separate `TF_DATA_DIR` per environment",
+      "Slower plans; mitigated by `-parallelism`",
+      "No risk; Terraform detects the mismatch automatically",
+      "Provider version drift; mitigated by `-upgrade`"
+    ],
+    "answer": 0,
+    "explain": "The `.terraform` directory remembers the backend it was initialised with. Reusing it across environments after a `-reconfigure` mistake is how dev values reach prod state. Separate data directories and a wrapper that always pairs files remove that footgun."
+  },
+  {
+    "type": "multi",
+    "q": "Which items belong in a module's interface to make it reusable and safe? (select all)",
+    "options": [
+      "A hard-coded `provider` block with credentials inside the module",
+      "Typed variables with descriptions",
+      "Outputs exposing what consumers need (IDs, endpoints)",
+      "`validation` blocks for constrained inputs"
+    ],
+    "answer": [
+      1,
+      2,
+      3
+    ],
+    "explain": "Modules should declare `required_providers` but receive provider configurations from the caller; hard-coded provider blocks with credentials make modules unusable across accounts and break `count`/`for_each` on modules."
+  },
+  {
+    "type": "single",
+    "q": "Your unit test uses `mock_provider \"helm\" {}` and asserts on `yamldecode(helm_release.shipit.values[0]).replicaCount`. What does a passing test prove?",
+    "options": [
+      "That the image exists",
+      "That the module computes the intended Helm values from its inputs",
+      "That Kubernetes accepts the rendered manifests",
+      "That the chart deploys successfully to Kubernetes"
+    ],
+    "answer": 1,
+    "explain": "Mocked tests validate the module's own logic. Chart correctness needs `helm lint`/`helm template`, and end-to-end behaviour needs an integration test or a real apply."
+  },
+  {
+    "type": "single",
+    "q": "A secret generated with `random_password` is passed to a Helm chart via `set_sensitive`. Where can the plain-text value still be found?",
+    "options": [
+      "In the Terraform state (and in the Kubernetes Secret / Helm release data in the cluster)",
+      "Only in the plan output",
+      "Nowhere; `set_sensitive` encrypts it",
+      "In `.terraform.lock.hcl`"
+    ],
+    "answer": 0,
+    "explain": "Sensitive marking only redacts CLI output. State stores values in plain text, which is why state must be access-controlled and encrypted at rest. The cluster stores it too, base64-encoded."
+  },
+  {
+    "type": "single",
+    "q": "`terraform plan` fails with `Error acquiring the state lock`, and the lock info shows an apply started two hours ago by a CI job that crashed. What is the correct sequence?",
+    "options": [
+      "Wait; locks expire automatically after an hour",
+      "Delete the state file and re-apply",
+      "Confirm no Terraform run is still active for that state, then `terraform force-unlock <ID>`, then plan again",
+      "Use `-lock=false` for all future runs"
+    ],
+    "answer": 2,
+    "explain": "Locks are not released when a process is killed. Force-unlocking is safe only after confirming nothing else is writing; disabling locking invites concurrent writes and state corruption."
+  },
+  {
+    "type": "single",
+    "q": "Which CI authentication pattern is the current best practice for GitHub Actions applying Terraform to AWS?",
+    "options": [
+      "OIDC federation to an IAM role restricted by `aud` and `sub` (repo, branch or environment)",
+      "Self-hosted runner with an EC2 instance profile that has AdministratorAccess for every repo",
+      "Sharing an SSO session cache file as a secret",
+      "Long-lived IAM user keys in repository secrets, rotated yearly"
+    ],
+    "answer": 0,
+    "explain": "OIDC gives short-lived credentials with no stored secret, scoped by trust policy conditions. Separate read-only plan and protected apply roles reduce blast radius further."
+  },
+  {
+    "type": "multi",
+    "q": "Which of these are good reasons to split infrastructure into several Terraform states? (select all)",
+    "options": [
+      "Limiting the blast radius and permissions of each pipeline",
+      "Avoiding plan-time dependencies on resources that don't exist yet (cluster vs in-cluster resources)",
+      "Making every resource visible in one giant plan",
+      "Different change frequencies and owners (network vs services)"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "Splitting by lifecycle, ownership and dependency phase keeps plans fast, safe and possible from scratch. One giant plan is the opposite of what you want at scale."
+  },
+  {
+    "type": "single",
+    "q": "Before running a paid AWS stretch goal, which guard rail actually prevents an accidental apply rather than just warning?",
+    "options": [
+      "A required variable whose `validation` fails unless the operator sets `i_accept_aws_costs = true`",
+      "An output reminding you to destroy",
+      "An `ExpiresOn` tag",
+      "A `check` block that verifies a budget exists"
+    ],
+    "answer": 0,
+    "explain": "Variable validation errors stop the plan. `check` blocks only produce warnings, and tags and outputs are informational, though all of them help you notice and clean up."
+  }
+]

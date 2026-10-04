@@ -1,0 +1,166 @@
+[
+  {
+    "type": "multi",
+    "q": "Why does Terraform need a state file? (select all)",
+    "options": [
+      "To map resource addresses in config to real object IDs",
+      "To remember dependencies so it can destroy in the right order after blocks are deleted",
+      "To store the provider binaries",
+      "To know that a resource removed from config must be destroyed"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "State maps addresses to IDs, records dependencies and attributes, and is the only record of objects whose blocks were deleted. Provider binaries live in `.terraform/providers`."
+  },
+  {
+    "type": "single",
+    "q": "Which S3 backend setting is the current recommended way to lock state?",
+    "options": [
+      "`dynamodb_table = \"terraform-locks\"`",
+      "`lock = true`",
+      "`use_lockfile = true`",
+      "`encrypt = true`"
+    ],
+    "answer": 2,
+    "explain": "`use_lockfile = true` uses S3 conditional writes to create a `.tflock` object next to the state (GA since Terraform 1.11). `dynamodb_table` still works but is deprecated. `encrypt` is about server-side encryption, not locking."
+  },
+  {
+    "type": "single",
+    "q": "A hotfix changed a container's restart policy by hand, and the team agrees the new value is correct. What is the right sequence?",
+    "options": [
+      "Update the `.tf` code to the new value, then apply (optionally `apply -refresh-only` first to record it)",
+      "Run `terraform apply`; it will keep the manual value",
+      "Edit `terraform.tfstate` by hand to the new value",
+      "Run `terraform state rm` and re-import"
+    ],
+    "answer": 0,
+    "explain": "Accepting drift means changing code. A normal apply without code changes would revert the hotfix. `-refresh-only` records observed values in state but doesn't change your config, so the next plan would revert it unless the code is updated."
+  },
+  {
+    "type": "single",
+    "q": "You renamed `resource \"aws_db_instance\" \"main\"` to `\"primary\"`. The plan shows `1 to add, 1 to destroy`. What should you do?",
+    "options": [
+      "Apply; Terraform will copy the data",
+      "Add `lifecycle { prevent_destroy = true }` and apply",
+      "Use `-replace=aws_db_instance.primary`",
+      "Add `moved { from = aws_db_instance.main  to = aws_db_instance.primary }` and re-plan"
+    ],
+    "answer": 3,
+    "explain": "A `moved` block tells Terraform the old and new addresses are the same object, so the plan becomes a no-op move. `prevent_destroy` would just make the plan fail; `-replace` forces exactly the destruction you want to avoid."
+  },
+  {
+    "type": "single",
+    "q": "`terraform plan` fails with `Error acquiring the state lock`. The lock info shows your colleague's laptop, created 3 hours ago, and they confirm their laptop crashed mid-apply. What do you do?",
+    "options": [
+      "Run `terraform apply -lock=false`",
+      "Delete the state file and re-import everything",
+      "Run `terraform force-unlock <lock ID>`, then plan carefully to see what the interrupted apply left behind",
+      "Wait; locks expire automatically after 24 hours"
+    ],
+    "answer": 2,
+    "explain": "Once you've confirmed nobody is running Terraform, `force-unlock` with the ID from the error releases the stale lock. Then a plan shows whatever partial state the crashed apply left. `-lock=false` risks corruption, and S3 lockfiles don't expire."
+  },
+  {
+    "type": "single",
+    "q": "Why can't a backend block reference `var.environment`?",
+    "options": [
+      "Backends are configured during `init`, before variables are evaluated",
+      "Variables are always sensitive",
+      "It's allowed in Terraform 1.10+",
+      "Backend blocks can only contain numbers"
+    ],
+    "answer": 0,
+    "explain": "The backend must be initialised before Terraform can load state and evaluate the rest of the configuration. Use partial configuration: `backend \"s3\" {}` plus `terraform init -backend-config=prod.s3.tfbackend`."
+  },
+  {
+    "type": "single",
+    "q": "An S3 bucket was created by hand years ago. You want Terraform to manage it without recreating it. What's the recommended approach?",
+    "options": [
+      "Write the resource block and apply; Terraform will detect the existing bucket",
+      "Use a `data` source; that makes Terraform manage it",
+      "Add an `import` block with `to` and `id`, generate or write matching config, and apply when the plan shows `1 to import` and no destructive changes",
+      "Use a `moved` block from the bucket name"
+    ],
+    "answer": 2,
+    "explain": "`import` blocks (1.5+) adopt existing objects through a reviewable plan. `terraform plan -generate-config-out=file.tf` can draft the config. A plain resource block would try to create a new bucket and fail; data sources only read."
+  },
+  {
+    "type": "single",
+    "q": "You want Terraform to stop managing a container (another team will own it) without deleting it. Which is the config-driven way?",
+    "options": [
+      "`removed { from = docker_container.x  lifecycle { destroy = false } }`",
+      "Delete the resource block",
+      "`moved { from = docker_container.x  to = null }`",
+      "`lifecycle { prevent_destroy = true }`"
+    ],
+    "answer": 0,
+    "explain": "A `removed` block with `destroy = false` (1.7+) drops the object from state and leaves it running, and shows that in the plan. Deleting the block would destroy the container. The imperative equivalent is `terraform state rm`."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about secrets in state are true? (select all)",
+    "options": [
+      "Values marked `sensitive` are stored in plain text in state",
+      "The state bucket should have encryption, versioning and restricted access",
+      "`random_password` results end up in state",
+      "Using the S3 backend automatically removes secrets from state"
+    ],
+    "answer": [
+      0,
+      1,
+      2
+    ],
+    "explain": "Sensitivity only affects display. Anything a provider returns, including generated passwords and keys, is stored in state. Backends store state; they don't strip secrets. Protect the bucket, and prefer designs (ephemeral values, managed secrets) that keep secrets out of state."
+  },
+  {
+    "type": "single",
+    "q": "A container is stuck in a broken state that Terraform can't detect. How do you recreate it through Terraform?",
+    "options": [
+      "`terraform taint` is the only option",
+      "`terraform state rm docker_container.web` then apply",
+      "`terraform apply -refresh-only`",
+      "`terraform apply -replace=docker_container.web`"
+    ],
+    "answer": 3,
+    "explain": "`-replace` plans a destroy/create of that one resource and shows it in the plan. It supersedes `taint`. `state rm` + apply would create a second container and conflict on the name."
+  },
+  {
+    "type": "single",
+    "q": "`terraform state push restore.tfstate` is rejected. The file's lineage matches the remote state but its serial is lower. What does the check protect against?",
+    "options": [
+      "Pushing a state from a different configuration",
+      "Overwriting newer state changes with an older copy by accident",
+      "Pushing a state with invalid JSON",
+      "Pushing a state from a different Terraform version"
+    ],
+    "answer": 1,
+    "explain": "The serial increases on every write. A lower serial means your file is older than what's stored. Lineage protects against pushing a completely unrelated state. If you really want the older version, push deliberately (bump the serial or `-force`) after verifying."
+  },
+  {
+    "type": "single",
+    "q": "You moved from local state to an S3 backend by adding a backend block. Which command copies your existing state into the bucket?",
+    "options": [
+      "`terraform init -reconfigure`",
+      "`terraform init -migrate-state`",
+      "`terraform state push`",
+      "`terraform apply -refresh-only`"
+    ],
+    "answer": 1,
+    "explain": "`init -migrate-state` copies state from the old backend to the new one. `-reconfigure` switches backend config without copying, which you use when pointing at a different, already-populated state."
+  },
+  {
+    "type": "single",
+    "q": "Why do many teams avoid CLI workspaces (`terraform workspace new prod`) for separating environments?",
+    "options": [
+      "All environments share the same code and backend credentials, and the active workspace isn't visible in code, so it's easy to apply to the wrong one",
+      "Workspaces don't support remote backends",
+      "Workspaces are deprecated",
+      "Workspaces can't have different variable values"
+    ],
+    "answer": 0,
+    "explain": "Workspaces work with S3 (`env:/<name>/key`) and aren't deprecated, but they make environment selection implicit and couple access control. Separate directories or backend config files per environment are more explicit. Workspaces suit short-lived copies like per-branch stacks."
+  }
+]

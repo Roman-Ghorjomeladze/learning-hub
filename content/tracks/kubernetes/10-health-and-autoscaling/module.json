@@ -1,0 +1,24 @@
+{
+  "title": "Health Checks & Autoscaling",
+  "summary": "Keep services healthy and right-sized under changing load: liveness, readiness and startup probes done properly, graceful shutdown for zero-downtime deploys of Node apps, the Horizontal Pod Autoscaler with tuned behavior, VPA, cluster autoscaling with Cluster Autoscaler or Karpenter, and event-driven scaling with KEDA.",
+  "level": "intermediate",
+  "estimatedMinutes": 220,
+  "objectives": [
+    "Choose the right probe type and endpoint for liveness, readiness and startup, and tune thresholds",
+    "Avoid the classic probe mistakes, such as liveness checks that depend on the database",
+    "Implement graceful shutdown in Node.js (readiness flip, preStop delay, SIGTERM handling) and prove zero-downtime rollouts",
+    "Configure HPA v2 on CPU, memory and custom/external metrics, and tune scaling behavior and stabilization",
+    "Explain VPA, Cluster Autoscaler and Karpenter and how they interact with HPA",
+    "Scale workers from queue length with KEDA, including scale to zero",
+    "Load test with k6 and watch the autoscaler react"
+  ],
+  "resources": [
+    { "title": "Configure Liveness, Readiness and Startup Probes", "url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/", "type": "docs", "note": "All probe types and fields with examples." },
+    { "title": "Pod Lifecycle: termination of Pods", "url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/", "type": "docs", "note": "The shutdown sequence, grace periods and container hooks." },
+    { "title": "Horizontal Pod Autoscaling", "url": "https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/", "type": "docs", "note": "Algorithm, metrics types and the behavior field." },
+    { "title": "Vertical Pod Autoscaler", "url": "https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler", "type": "tool", "note": "Recommendations and automatic request updates." },
+    { "title": "Karpenter", "url": "https://karpenter.sh/", "type": "tool", "note": "Just-in-time node provisioning, widely used on EKS." },
+    { "title": "KEDA", "url": "https://keda.sh/", "type": "tool", "note": "Event-driven autoscaling with dozens of scalers and scale to zero." },
+    { "title": "Grafana k6", "url": "https://grafana.com/docs/k6/latest/", "type": "tool", "note": "Scriptable load testing in JavaScript." }
+  ]
+}

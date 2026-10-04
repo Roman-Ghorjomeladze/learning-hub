@@ -1,0 +1,17 @@
+[
+  { "front": "What is a reconciliation loop?", "back": "A controller repeatedly observes actual state, compares it with the desired state stored in the API, and acts to close the gap. It is level-triggered, so it converges even after missing events." },
+  { "front": "What does kube-apiserver do with every request?", "back": "Authentication → authorization (RBAC) → mutating admission → schema validation → validating admission → persist to etcd. It also serves watches. It is the only component that talks to etcd." },
+  { "front": "What is etcd and how many members should it have?", "back": "A Raft-based, strongly consistent key-value store holding all cluster state. Use an odd number (3 or 5) so a majority quorum survives failures; back it up." },
+  { "front": "What exactly does kube-scheduler do?", "back": "Watches pods with no `spec.nodeName`, filters out nodes that cannot run them, scores the rest, and writes a Binding. It never starts containers." },
+  { "front": "What is kube-controller-manager?", "back": "One binary running the built-in controllers (Deployment, ReplicaSet, Job, Node, EndpointSlice, garbage collector, ...). Only one instance is active at a time via Lease-based leader election." },
+  { "front": "What does the kubelet do?", "back": "Runs on each node, watches pods bound to it, starts them through the CRI, runs probes, mounts volumes, reports status and heartbeats. It also runs static pods from `/etc/kubernetes/manifests`." },
+  { "front": "What is the CRI?", "back": "The Container Runtime Interface: a gRPC API the kubelet uses to talk to runtimes like containerd or CRI-O, which use an OCI runtime (runc) to create containers." },
+  { "front": "What does kube-proxy do?", "back": "Watches Services and EndpointSlices and programs kernel rules (iptables or nftables) on each node so Service virtual IPs load-balance to pod IPs." },
+  { "front": "Name the chain of objects and controllers behind a Deployment.", "back": "Deployment → (Deployment controller) → ReplicaSet → (ReplicaSet controller) → Pods → (scheduler binds) → kubelet runs containers via CRI." },
+  { "front": "spec vs status", "back": "`spec` is desired state written by you; `status` is observed state written by controllers. Never put `status` in your manifests." },
+  { "front": "What are `generation` and `observedGeneration`?", "back": "`metadata.generation` increments on spec changes; the controller copies it to `status.observedGeneration` after reconciling. A lag means it has not caught up." },
+  { "front": "Labels vs annotations", "back": "Labels identify and are used by selectors (short values, max 63 chars). Annotations hold non-identifying metadata for tools and humans and are never used for selection." },
+  { "front": "What is a static pod?", "back": "A pod defined by a manifest file on a node and run directly by the kubelet, without the scheduler. The API shows a read-only mirror pod. kubeadm and kind run the control plane this way." },
+  { "front": "Three ways to explore the API from the CLI", "back": "`kubectl api-resources` / `api-versions` (discovery), `kubectl explain <path>` (schema), `kubectl get --raw /path` or `kubectl proxy` + curl (raw HTTP). Add `-v=6` to see requests." },
+  { "front": "What are ownerReferences used for?", "back": "They link a child to its owner (Pod → ReplicaSet → Deployment). The garbage collector uses them for cascading deletion of children when the owner is deleted." }
+]

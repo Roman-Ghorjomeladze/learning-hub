@@ -1,0 +1,25 @@
+{
+  "title": "Pods in Depth",
+  "summary": "The smallest deployable unit: pod spec, lifecycle and container states, restart policies, init and sidecar containers, the downward API, graceful shutdown, static pods and ephemeral debug containers.",
+  "level": "beginner",
+  "estimatedMinutes": 180,
+  "objectives": [
+    "Read and write a complete pod spec, including command/args, env, resources, probes and volumes",
+    "Explain pod phases, pod conditions and container states, and interpret STATUS values and exit codes",
+    "Choose the right restartPolicy and understand CrashLoopBackOff",
+    "Use init containers and native sidecar containers, and recognise ambassador and adapter patterns",
+    "Share data and the network namespace between containers in a pod",
+    "Expose pod metadata to containers with the downward API",
+    "Implement graceful termination for a Node.js service with SIGTERM handling, preStop and terminationGracePeriodSeconds",
+    "Debug minimal images with ephemeral containers via `kubectl debug`"
+  ],
+  "resources": [
+    { "title": "Pods", "url": "https://kubernetes.io/docs/concepts/workloads/pods/", "type": "docs", "note": "Concepts overview for pods." },
+    { "title": "Pod Lifecycle", "url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/", "type": "docs", "note": "Phases, conditions, container states, restart policy, termination." },
+    { "title": "Init Containers", "url": "https://kubernetes.io/docs/concepts/workloads/pods/init-containers/", "type": "docs", "note": "Ordering, resources and behaviour of init containers." },
+    { "title": "Sidecar Containers", "url": "https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/", "type": "docs", "note": "Native sidecars via initContainers with restartPolicy: Always." },
+    { "title": "Downward API", "url": "https://kubernetes.io/docs/concepts/workloads/pods/downward-api/", "type": "docs", "note": "Which pod and container fields can be exposed." },
+    { "title": "Configure Liveness, Readiness and Startup Probes", "url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/", "type": "docs", "note": "Probe types and parameters." },
+    { "title": "Debug Running Pods", "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/", "type": "docs", "note": "kubectl debug, ephemeral containers, pod copies and node debugging." }
+  ]
+}

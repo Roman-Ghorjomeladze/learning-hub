@@ -1,0 +1,23 @@
+{
+  "title": "Variables, Outputs & Types",
+  "summary": "Make configurations reusable and safe: typed input variables with validation, the ways to set them and their precedence, locals, outputs, data sources and `terraform console` for experimenting.",
+  "level": "beginner",
+  "estimatedMinutes": 150,
+  "objectives": [
+    "Declare input variables with precise types, including objects with `optional()` attributes and defaults",
+    "Write `validation` blocks with clear error messages and use `sensitive`, `nullable` and `ephemeral` correctly",
+    "Set variables via `terraform.tfvars`, `*.auto.tfvars`, `-var`, `-var-file` and `TF_VAR_` and predict which value wins",
+    "Use locals to name and reuse derived values without turning them into inputs",
+    "Expose outputs (including sensitive ones) and consume them from the CLI and scripts",
+    "Read existing information with data sources and experiment with expressions in `terraform console`"
+  ],
+  "resources": [
+    { "title": "Input variables", "url": "https://developer.hashicorp.com/terraform/language/values/variables", "type": "docs", "note": "Declaring, typing, validating and assigning variables, including precedence." },
+    { "title": "Type constraints", "url": "https://developer.hashicorp.com/terraform/language/expressions/type-constraints", "type": "docs", "note": "Primitive, collection and structural types, `optional()` and `any`." },
+    { "title": "Output values", "url": "https://developer.hashicorp.com/terraform/language/values/outputs", "type": "docs", "note": "Outputs, sensitivity and preconditions." },
+    { "title": "Local values", "url": "https://developer.hashicorp.com/terraform/language/values/locals", "type": "docs", "note": "When and how to use locals." },
+    { "title": "Data sources", "url": "https://developer.hashicorp.com/terraform/language/data-sources", "type": "docs", "note": "Reading existing infrastructure and external information." },
+    { "title": "terraform console", "url": "https://developer.hashicorp.com/terraform/cli/commands/console", "type": "docs", "note": "Interactive expression evaluation." },
+    { "title": "random provider", "url": "https://registry.terraform.io/providers/hashicorp/random/latest/docs", "type": "docs", "note": "random_password, random_pet and friends used in the labs." }
+  ]
+}

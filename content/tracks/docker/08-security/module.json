@@ -1,0 +1,24 @@
+{
+  "title": "Container Security",
+  "summary": "A practical threat model for containers and the controls that matter: non-root users, dropped capabilities, no-new-privileges, read-only filesystems, seccomp/AppArmor, rootless Docker, secret handling, image scanning, SBOMs, signing and patching.",
+  "level": "advanced",
+  "estimatedMinutes": 180,
+  "objectives": [
+    "Explain the container threat model and why a container is not a security boundary by default",
+    "Run containers with least privilege: non-root, `--cap-drop ALL`, `no-new-privileges`, read-only root filesystem with tmpfs",
+    "Describe what the default seccomp and AppArmor profiles do and when user namespaces or rootless Docker help",
+    "Handle secrets correctly at build time (BuildKit secrets) and runtime (files, not ENV or layers)",
+    "Scan images with Docker Scout, Trivy or Grype, generate SBOMs and provenance, and sign/verify images with cosign",
+    "Choose minimal base images, keep them patched, and audit a host with docker-bench-security"
+  ],
+  "resources": [
+    { "title": "Docker Engine security", "url": "https://docs.docker.com/engine/security/", "type": "docs", "note": "Namespaces, cgroups, capabilities, and the daemon attack surface." },
+    { "title": "Rootless mode", "url": "https://docs.docker.com/engine/security/rootless/", "type": "docs", "note": "Run the daemon and containers without root." },
+    { "title": "Seccomp security profiles for Docker", "url": "https://docs.docker.com/engine/security/seccomp/", "type": "docs", "note": "What the default profile blocks and how to customise it." },
+    { "title": "Build secrets", "url": "https://docs.docker.com/build/building/secrets/", "type": "docs", "note": "BuildKit secret and SSH mounts." },
+    { "title": "Docker Scout", "url": "https://docs.docker.com/scout/", "type": "docs", "note": "Image analysis, CVEs, base image recommendations." },
+    { "title": "Trivy", "url": "https://github.com/aquasecurity/trivy", "type": "tool", "note": "Open-source scanner for images, filesystems and IaC." },
+    { "title": "Sigstore cosign", "url": "https://docs.sigstore.dev/cosign/signing/overview/", "type": "docs", "note": "Signing and verifying container images, keyless with OIDC." },
+    { "title": "docker-bench-security", "url": "https://github.com/docker/docker-bench-security", "type": "tool", "note": "Checks a host against the CIS Docker Benchmark." }
+  ]
+}

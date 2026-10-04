@@ -1,0 +1,22 @@
+{
+  "title": "Project 3: Incident drills (game day)",
+  "summary": "Practise incident response on the shipit stack: 12 break-and-fix drills across Docker, Kubernetes, Helm and Terraform, each with an injected fault, a symptom, hints, root cause and fix, and a blameless postmortem prompt.",
+  "level": "advanced",
+  "estimatedMinutes": 420,
+  "objectives": [
+    "Run an incident through detect, triage, mitigate, resolve and postmortem, mitigating before root-causing",
+    "Diagnose pod failures from status, events, exit codes and previous logs (CrashLoopBackOff, OOMKilled, exec format error, Pending)",
+    "Debug traffic problems along the request path: readiness, endpoints, NetworkPolicy, DNS and the Gateway",
+    "Recover from Helm upgrade failures and Terraform drift and stuck state locks safely",
+    "Write a blameless postmortem with contributing factors and owned action items"
+  ],
+  "resources": [
+    { "title": "Google SRE book: Postmortem culture", "url": "https://sre.google/sre-book/postmortem-culture/", "type": "book", "note": "The classic chapter on blameless postmortems." },
+    { "title": "Google SRE book: Managing incidents", "url": "https://sre.google/sre-book/managing-incidents/", "type": "book", "note": "Incident command roles and communication." },
+    { "title": "PagerDuty Incident Response documentation", "url": "https://response.pagerduty.com/", "type": "docs", "note": "Open-source incident response process, roles and templates." },
+    { "title": "Kubernetes: Monitoring, logging and debugging", "url": "https://kubernetes.io/docs/tasks/debug/", "type": "docs", "note": "Official guides for debugging pods, services and clusters." },
+    { "title": "Kubernetes: Debug running pods", "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/", "type": "docs", "note": "kubectl debug and ephemeral containers." },
+    { "title": "Terraform force-unlock command", "url": "https://developer.hashicorp.com/terraform/cli/commands/force-unlock", "type": "docs", "note": "When and how to remove a stale state lock." },
+    { "title": "helm rollback", "url": "https://helm.sh/docs/helm/helm_rollback/", "type": "docs", "note": "Rolling a release back to a previous revision." }
+  ]
+}

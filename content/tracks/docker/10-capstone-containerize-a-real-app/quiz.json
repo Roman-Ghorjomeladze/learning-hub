@@ -1,0 +1,186 @@
+[
+  {
+    "type": "single",
+    "q": "Which Linux kernel features provide a container's isolation (what it can see) and resource limits (what it can use)?",
+    "options": [
+      "SELinux for isolation, iptables for limits",
+      "A hypervisor per container",
+      "Namespaces for isolation, cgroups for resource limits",
+      "chroot and ulimit"
+    ],
+    "answer": 2,
+    "explain": "Namespaces (pid, net, mnt, uts, ipc, user, cgroup) control visibility; cgroups control CPU, memory, PIDs and I/O. Containers share the host kernel; there's no hypervisor per container."
+  },
+  {
+    "type": "single",
+    "q": "In a Node Dockerfile, why do you `COPY package.json package-lock.json ./` and run `npm ci` before `COPY src ./src`?",
+    "options": [
+      "npm requires the lockfile to be in a separate layer",
+      "To avoid running as root",
+      "To make the image multi-arch",
+      "So that code-only changes reuse the cached dependency layer instead of reinstalling every build"
+    ],
+    "answer": 3,
+    "explain": "Each instruction's cache depends on its inputs. Dependencies change rarely; source changes often. Ordering from least to most frequently changed keeps `npm ci` cached."
+  },
+  {
+    "type": "multi",
+    "q": "Which practices make the shipit API runtime image smaller and safer? (select all)",
+    "options": [
+      "Use a `.dockerignore` that excludes `node_modules`, `.git` and `.env`",
+      "Install `curl` and `vim` for debugging in the runtime image",
+      "Run as a non-root user with application files owned by root",
+      "Compile TypeScript in a build stage and copy only `dist/` and production `node_modules` into the runtime stage"
+    ],
+    "answer": [
+      0,
+      2,
+      3
+    ],
+    "explain": "Multi-stage builds, non-root users, read-only code and a tight build context all reduce size and attack surface. Debug tools belong in sidecars or `docker debug`, not the runtime image."
+  },
+  {
+    "type": "single",
+    "q": "Why does the capstone's TypeScript build stage use `FROM --platform=$BUILDPLATFORM`, while the production-dependencies stage doesn't?",
+    "options": [
+      "Compiled JavaScript is architecture-independent, so it can run natively on the builder; production dependencies may contain native code that must match the target platform",
+      "Production dependencies can't be cached otherwise",
+      "BuildKit requires at least one stage per platform",
+      "`$BUILDPLATFORM` makes the final image smaller"
+    ],
+    "answer": 0,
+    "explain": "Running arch-independent work natively avoids slow emulation during multi-platform builds. Anything producing target-specific binaries (native npm modules) must run for the target platform."
+  },
+  {
+    "type": "single",
+    "q": "You mount a named volume at `/var/lib/postgresql/data` on a `postgres:18` container. Data seems to vanish after `docker compose down && up`. Why?",
+    "options": [
+      "Compose deletes named volumes on `down`",
+      "Postgres 18 requires a bind mount",
+      "Postgres 18 images store data under `/var/lib/postgresql` (version-specific PGDATA) and declare `VOLUME /var/lib/postgresql`, so data went to an anonymous volume",
+      "The volume driver is wrong"
+    ],
+    "answer": 2,
+    "explain": "From 18 the image layout changed. Mount at `/var/lib/postgresql` and verify mounts with `docker inspect` after any database change."
+  },
+  {
+    "type": "single",
+    "q": "Inside the api container, which `DATABASE_URL` host is correct when Postgres is the Compose service `db` on the same network, published as `127.0.0.1:15432:5432`?",
+    "options": [
+      "`host.docker.internal:5432`",
+      "`localhost:15432`",
+      "`db:15432`",
+      "`db:5432`"
+    ],
+    "answer": 3,
+    "explain": "Container-to-container traffic uses the service name (resolved by Docker's embedded DNS at 127.0.0.11) and the container port. Published host ports are only for access from outside."
+  },
+  {
+    "type": "multi",
+    "q": "Which Compose features does the capstone use to start services in the right order? (select all)",
+    "options": [
+      "`links:` between services",
+      "`depends_on` with `condition: service_healthy`",
+      "`depends_on` with `condition: service_completed_successfully` for the migration job",
+      "Healthchecks on `db`, `cache` and `api`"
+    ],
+    "answer": [
+      1,
+      2,
+      3
+    ],
+    "explain": "Health-gated dependencies plus a one-off migration job give deterministic startup. `links` is legacy and unnecessary on user-defined networks."
+  },
+  {
+    "type": "single",
+    "q": "In the prod-like stack, `nginx` reaches `api` but cannot reach `db`, and `db` has no internet access. How is that achieved?",
+    "options": [
+      "Two networks: `edge` (web, api) and an `internal: true` `data` network (api, migrate, db, cache)",
+      "iptables rules written by hand",
+      "Running db with `--network none`",
+      "Publishing db on 127.0.0.1"
+    ],
+    "answer": 0,
+    "explain": "Services can only resolve and reach peers on shared networks. An internal network has no external gateway. The API is attached to both and bridges the tiers."
+  },
+  {
+    "type": "single",
+    "q": "Where should the DB password live in the prod-like stack?",
+    "options": [
+      "In `ENV` in the Dockerfile",
+      "In a Compose secret mounted at `/run/secrets/db_password`, read via `POSTGRES_PASSWORD_FILE` / `DB_PASSWORD_FILE`",
+      "As a build arg",
+      "In the image's `/etc/passwd`"
+    ],
+    "answer": 1,
+    "explain": "File-based secrets keep the value out of image layers, environment variables and `docker inspect`. In production the file comes from a secret manager."
+  },
+  {
+    "type": "multi",
+    "q": "Which runtime settings are applied to `web` and `api` in the prod-like stack? (select all)",
+    "options": [
+      "`no-new-privileges:true` and memory/CPU/PID limits",
+      "`privileged: true` for performance",
+      "`read_only: true` with a tmpfs `/tmp`",
+      "`cap_drop: [ALL]`"
+    ],
+    "answer": [
+      0,
+      2,
+      3
+    ],
+    "explain": "These limit what an attacker can do after compromising the process and stop runaway resource use. `privileged` would remove nearly all isolation."
+  },
+  {
+    "type": "single",
+    "q": "A teammate deploys your image to an amd64 server and gets `exec format error`. `docker buildx imagetools inspect` shows only `linux/arm64`. What went wrong?",
+    "options": [
+      "The image was built only for the Mac's native platform; it must be built with `--platform linux/amd64,linux/arm64`",
+      "The healthcheck failed",
+      "The server needs Rosetta",
+      "The entrypoint lacks execute permission"
+    ],
+    "answer": 0,
+    "explain": "Without `--platform`, buildx builds for the local platform. Multi-arch builds produce an index with one manifest per platform, and each host pulls its own."
+  },
+  {
+    "type": "single",
+    "q": "`docker stop` on the api takes 10 seconds and the exit code is 137. The Dockerfile has `CMD [\"node\", \"dist/server.js\"]`. What's missing?",
+    "options": [
+      "A `HEALTHCHECK`",
+      "A larger memory limit",
+      "A SIGTERM handler in the app (Node as PID 1 ignores SIGTERM without one), or `init: true`",
+      "`EXPOSE 3000`"
+    ],
+    "answer": 2,
+    "explain": "As PID 1, Node gets no default SIGTERM action. The capstone's `shutdown()` handler closes the server and pools and exits 0 in well under a second."
+  },
+  {
+    "type": "single",
+    "q": "Why do the capstone's CI and deployment refer to images by digest where possible?",
+    "options": [
+      "Digests are shorter than tags",
+      "A digest is an immutable content hash, so you deploy exactly what you built, scanned and signed; tags can be moved",
+      "Registries reject tag pulls",
+      "Digests enable multi-arch builds"
+    ],
+    "answer": 1,
+    "explain": "Tags are mutable pointers. Digest references guarantee immutability, which is the basis for signing, provenance and reproducible deployments."
+  },
+  {
+    "type": "multi",
+    "q": "Your Mac's Docker disk is nearly full. Which commands are safe to run without losing your local `shipit_pgdata` database? (select all)",
+    "options": [
+      "`docker image prune -a`",
+      "`docker container prune`",
+      "`docker builder prune --filter until=168h`",
+      "`docker volume prune --all` while the stack is down"
+    ],
+    "answer": [
+      0,
+      1,
+      2
+    ],
+    "explain": "Build cache, unused images and stopped containers can be recreated. `volume prune --all` removes unused named volumes, including the database when no container references it."
+  }
+]

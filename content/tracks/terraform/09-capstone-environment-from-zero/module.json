@@ -1,0 +1,24 @@
+{
+  "title": "Capstone: An Environment from Zero",
+  "summary": "Build a local platform entirely with Terraform: kind clusters for dev and prod, namespaces, Gateway API and Traefik via the helm provider, and the shipit app via a Helm chart, organised into tested modules and separate stacks with remote state in an S3-compatible store, plus CI and an optional AWS stretch goal.",
+  "level": "advanced",
+  "estimatedMinutes": 480,
+  "objectives": [
+    "Design a multi-stack Terraform repository (cluster, platform, app) with clear ownership and data flow",
+    "Use an S3 backend against a local S3-compatible store with native lockfile locking and per-environment state keys",
+    "Write reusable modules with validated inputs and use them from per-environment variable sets",
+    "Deploy a gateway controller and a real application with the helm provider, without two-phase apply problems",
+    "Cover modules with `terraform test` unit tests using mocks and overrides",
+    "Wire formatting, validation, linting, scanning and tests into a CI workflow",
+    "Optionally extend the platform to AWS with explicit cost guard rails"
+  ],
+  "resources": [
+    { "title": "S3 backend", "url": "https://developer.hashicorp.com/terraform/language/backend/s3", "type": "docs", "note": "All backend arguments, including endpoints, path-style access and use_lockfile." },
+    { "title": "Partial backend configuration", "url": "https://developer.hashicorp.com/terraform/language/backend#partial-configuration", "type": "docs", "note": "`-backend-config` files for per-environment state." },
+    { "title": "terraform_remote_state data source", "url": "https://developer.hashicorp.com/terraform/language/state/remote-state-data", "type": "docs", "note": "Reading another stack's outputs." },
+    { "title": "Terraform tests", "url": "https://developer.hashicorp.com/terraform/language/tests", "type": "docs", "note": "Reference for the test milestone." },
+    { "title": "Helm chart template guide", "url": "https://helm.sh/docs/chart_template_guide/", "type": "docs", "note": "Writing the small shipit chart." },
+    { "title": "kind: loading an image into your cluster", "url": "https://kind.sigs.k8s.io/docs/user/quick-start/#loading-an-image-into-your-cluster", "type": "docs", "note": "`kind load docker-image` and image archives." },
+    { "title": "Gateway API getting started", "url": "https://gateway-api.sigs.k8s.io/guides/", "type": "docs", "note": "HTTPRoute basics used by the chart." }
+  ]
+}

@@ -1,0 +1,169 @@
+[
+  {
+    "type": "single",
+    "q": "Which component is the **only** one that reads from and writes to etcd directly?",
+    "options": [
+      "kube-apiserver",
+      "kube-scheduler",
+      "kube-controller-manager",
+      "kubelet"
+    ],
+    "answer": 0,
+    "explain": "All other components go through the API server, which handles authentication, authorization, admission and validation before persisting to etcd. This hub-and-spoke design lets components be replaced independently."
+  },
+  {
+    "type": "single",
+    "q": "You run `kubectl delete pod web-7d9f-abcde`. The pod belongs to a Deployment with `replicas: 3`. A new pod appears seconds later. Which component created the new Pod **object**?",
+    "options": [
+      "The Deployment controller",
+      "The scheduler",
+      "The kubelet on the node that ran the old pod",
+      "The ReplicaSet controller"
+    ],
+    "answer": 3,
+    "explain": "The ReplicaSet controller counts pods matching its selector and creates Pod objects to reach the desired count. The Deployment controller manages ReplicaSets, not pods. The scheduler only assigns a node; the kubelet only runs pods already bound to its node."
+  },
+  {
+    "type": "single",
+    "q": "New pods in your cluster stay `Pending`. `kubectl describe pod` shows `Node: <none>` and **no events at all**. What is the most likely cause?",
+    "options": [
+      "Not enough CPU on any node",
+      "No scheduler is running (or none serves the pod's schedulerName)",
+      "The image cannot be pulled",
+      "The CNI plugin is broken"
+    ],
+    "answer": 1,
+    "explain": "A running scheduler that cannot place a pod records a `FailedScheduling` event (for example `Insufficient cpu`). Complete silence means nothing tried. Image pulls and CNI problems happen after binding, so the pod would have a node and kubelet events."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about the kube-scheduler are true? (select all)",
+    "options": [
+      "It filters out nodes that cannot run the pod, then scores the rest",
+      "It starts the containers on the chosen node",
+      "It writes a Binding that sets the pod's `spec.nodeName`",
+      "It considers resource **requests**, taints/tolerations and affinity rules"
+    ],
+    "answer": [
+      0,
+      2,
+      3
+    ],
+    "explain": "The scheduler's whole job is choosing a node and recording that choice via a Binding. The kubelet on that node then notices the pod and starts its containers through the CRI."
+  },
+  {
+    "type": "single",
+    "q": "Your CI pipeline runs `kubectl apply -f k8s/` and immediately marks the deploy as successful. Why is this wrong?",
+    "options": [
+      "`apply` returns once desired state is stored; pods may still be pulling, crashing or failing readiness",
+      "`apply` only works on single files",
+      "`apply` requires `--wait` to send anything to the server",
+      "`apply` is asynchronous only on managed clusters"
+    ],
+    "answer": 0,
+    "explain": "Kubernetes is eventually consistent. The API server responds after persisting the object; controllers, the scheduler and kubelets do the work afterwards. Gate pipelines on `kubectl rollout status deploy/<name> --timeout=...` or `kubectl wait`."
+  },
+  {
+    "type": "single",
+    "q": "What does it mean that Kubernetes controllers are **level-triggered**?",
+    "options": [
+      "They only react to events with a high priority level",
+      "They process events strictly in the order received and fail if one is missed",
+      "They act on the current observed state compared to desired state, so missing individual events does not matter",
+      "They run at fixed log levels"
+    ],
+    "answer": 2,
+    "explain": "A level-triggered controller looks at the world as it is now and converges, so a restart or a burst of changes is harmless. An edge-triggered design would depend on processing every event exactly once."
+  },
+  {
+    "type": "multi",
+    "q": "Which of these run on **every** worker node? (select all)",
+    "options": [
+      "kubelet",
+      "etcd",
+      "A container runtime such as containerd",
+      "kube-proxy (unless replaced by a CNI like Cilium)"
+    ],
+    "answer": [
+      0,
+      2,
+      3
+    ],
+    "explain": "Worker nodes need the kubelet to run pods, a CRI runtime to create containers, and usually kube-proxy for Service routing. etcd runs on control-plane nodes (or externally), never on ordinary workers."
+  },
+  {
+    "type": "single",
+    "q": "On a kind cluster you delete the pod `kube-apiserver-kind-control-plane` from `kube-system`. What happens?",
+    "options": [
+      "The API server stops and the cluster becomes unusable",
+      "The kubelet recreates the mirror pod; the real container keeps running because it is defined by a static manifest on disk",
+      "The ReplicaSet in kube-system recreates it",
+      "The scheduler moves the API server to a worker node"
+    ],
+    "answer": 1,
+    "explain": "Control-plane components on kubeadm/kind clusters are static pods defined in `/etc/kubernetes/manifests`. The API object is only a mirror. To stop a static pod you remove its manifest file from the node."
+  },
+  {
+    "type": "single",
+    "q": "A Deployment shows `metadata.generation: 7` and `status.observedGeneration: 6`. What does this tell you?",
+    "options": [
+      "The Deployment has been rolled back once",
+      "There are 6 ready replicas out of 7",
+      "The object is corrupt in etcd",
+      "The controller has not yet processed the latest spec change"
+    ],
+    "answer": 3,
+    "explain": "`generation` increments on every spec change; the controller copies it to `status.observedGeneration` once it has acted on that spec. A lag means the change has not been reconciled yet (or the controller is down)."
+  },
+  {
+    "type": "multi",
+    "q": "Which are good uses of **labels** (rather than annotations)? (select all)",
+    "options": [
+      "`app.kubernetes.io/name: shipit-api` so a Service can select the pods",
+      "A 40 KB JSON blob of build metadata",
+      "`environment: staging` so you can `kubectl get pods -l environment=staging`",
+      "The git commit SHA and a link to the CI run, for humans to read"
+    ],
+    "answer": [
+      0,
+      2
+    ],
+    "explain": "Labels exist for identification and selection, and values are limited to 63 characters. Large or descriptive metadata that nothing selects on belongs in annotations (up to 256 KiB total)."
+  },
+  {
+    "type": "single",
+    "q": "Which object is **cluster-scoped** (not namespaced)?",
+    "options": [
+      "ConfigMap",
+      "Deployment",
+      "PersistentVolume",
+      "Service"
+    ],
+    "answer": 2,
+    "explain": "PersistentVolumes, Nodes, StorageClasses, Namespaces, ClusterRoles and CRDs are cluster-scoped. PersistentVolumeClaims, by contrast, are namespaced. Check with `kubectl api-resources --namespaced=false`."
+  },
+  {
+    "type": "single",
+    "q": "\"Kubernetes removed dockershim in v1.24.\" What does this mean for an image you build with `docker build` on your Mac?",
+    "options": [
+      "Nothing: it is a standard OCI image and runs on containerd or CRI-O just the same",
+      "It must be rebuilt with buildah",
+      "It can only run on nodes that still have Docker Engine installed",
+      "It must be converted with `kind convert`"
+    ],
+    "answer": 0,
+    "explain": "Only the node's runtime integration changed: the kubelet now talks CRI to containerd or CRI-O instead of Docker Engine. Images are OCI-standard and portable. (Do watch out for CPU architecture: arm64 vs amd64.)"
+  },
+  {
+    "type": "single",
+    "q": "Which component creates a cloud load balancer when you create a `Service` of `type: LoadBalancer` on EKS or GKE?",
+    "options": [
+      "kube-proxy",
+      "kube-scheduler",
+      "CoreDNS",
+      "cloud-controller-manager (or the provider's load balancer controller)"
+    ],
+    "answer": 3,
+    "explain": "Cloud-specific logic lives in the cloud-controller-manager (and on AWS often in the separate AWS Load Balancer Controller). kube-proxy only programs node-local rules for routing Service traffic."
+  }
+]

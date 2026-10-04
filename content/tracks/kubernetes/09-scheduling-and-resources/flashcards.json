@@ -1,0 +1,17 @@
+[
+  { "front": "Requests vs limits", "back": "Requests: what the scheduler reserves (placement) and the CPU share under contention. Limits: the runtime ceiling enforced by cgroups." },
+  { "front": "Hitting the CPU limit vs the memory limit", "back": "CPU: throttled (paused within each 100 ms CFS period), higher latency. Memory: OOMKilled by the kernel, exit code 137." },
+  { "front": "QoS classes", "back": "Guaranteed: every container requests == limits for CPU and memory. BestEffort: no requests/limits anywhere. Burstable: everything else. Eviction order: BestEffort, Burstable, Guaranteed." },
+  { "front": "LimitRange vs ResourceQuota", "back": "LimitRange: per-container defaults, min and max in a namespace (applied at admission). ResourceQuota: total caps for the namespace (requests, limits, object counts)." },
+  { "front": "Where do quota rejections show up?", "back": "On the ReplicaSet (or Job/StatefulSet) as `FailedCreate` events, e.g. `exceeded quota`. No Pending pod is created." },
+  { "front": "Scheduler pipeline", "back": "Filter (hard constraints: resources, affinity, taints, spread, volumes) -> Score (preferences, LeastAllocated...) -> Reserve/Permit -> Bind. No feasible node: try preemption, else Pending with a FailedScheduling event." },
+  { "front": "Taint effects", "back": "`NoSchedule` (keep new pods out), `PreferNoSchedule` (soft), `NoExecute` (also evict running pods, optionally after `tolerationSeconds`)." },
+  { "front": "Taints vs affinity", "back": "Taints repel pods; tolerations allow a pod onto a tainted node; nodeSelector/node affinity attract pods. Dedicated nodes need taint + affinity." },
+  { "front": "Default 5-minute failover", "back": "Pods get tolerations for `node.kubernetes.io/not-ready` and `unreachable` (`NoExecute`) with `tolerationSeconds: 300`, so pods on a dead node are evicted after ~5 minutes." },
+  { "front": "topologySpreadConstraints key fields", "back": "`maxSkew`, `topologyKey` (zone/hostname), `whenUnsatisfiable` (`DoNotSchedule` | `ScheduleAnyway`), `labelSelector`, `matchLabelKeys`, `nodeTaintsPolicy`/`nodeAffinityPolicy`." },
+  { "front": "PodDisruptionBudget", "back": "Limits voluntary disruptions (drain, autoscaler) for selected pods via `minAvailable` or `maxUnavailable` (prefer `maxUnavailable: 1`). The Eviction API returns 429 when a PDB would be violated." },
+  { "front": "cordon vs drain", "back": "`kubectl cordon` marks a node unschedulable. `kubectl drain --ignore-daemonsets --delete-emptydir-data` cordons and evicts pods via the Eviction API, respecting PDBs. `uncordon` reverses it." },
+  { "front": "PriorityClass and preemption", "back": "Integer priority for pods. A pending higher-priority pod can evict lower-priority pods to fit. `preemptionPolicy: Never` = queue priority only. Built-ins: `system-cluster-critical`, `system-node-critical`." },
+  { "front": "Node.js memory in containers", "back": "Heap (bounded by `--max-old-space-size`, default sized from the cgroup limit on recent Node) + off-heap (Buffers, native, stacks). Set heap to ~75% of the limit. Heap OOM = exit 134; cgroup OOM = 137." },
+  { "front": "metrics-server", "back": "Collects current CPU/memory from kubelets and serves `metrics.k8s.io` for `kubectl top` and the HPA. No history (use Prometheus). On kind add `--kubelet-insecure-tls`." }
+]

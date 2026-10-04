@@ -1,0 +1,24 @@
+{
+  "title": "Config & Secrets",
+  "summary": "Separate configuration from images the Kubernetes way: ConfigMaps and Secrets consumed as env vars or files, what actually updates at runtime, why base64 is not security, encryption at rest, rolling restarts on config change, and the external secret managers used in production.",
+  "level": "intermediate",
+  "estimatedMinutes": 180,
+  "objectives": [
+    "Create ConfigMaps and Secrets from literals, files and env files, and consume them with env, envFrom and volumes",
+    "Predict which consumption methods pick up changes at runtime (mounted files) and which never do (env vars, subPath)",
+    "Explain why Secrets are only base64-encoded, how encryption at rest works, and how RBAC protects them",
+    "Combine sources with projected volumes and expose pod metadata with the downward API",
+    "Apply 12-factor config to a NestJS/Node service with validation at startup",
+    "Trigger rolling restarts on config change with hashes, checksum annotations or `kubectl rollout restart`",
+    "Compare External Secrets Operator, Sealed Secrets, SOPS and the Secrets Store CSI driver"
+  ],
+  "resources": [
+    { "title": "Kubernetes docs: ConfigMaps", "url": "https://kubernetes.io/docs/concepts/configuration/configmap/", "type": "docs", "note": "Consumption methods, update behaviour, immutable ConfigMaps." },
+    { "title": "Kubernetes docs: Secrets", "url": "https://kubernetes.io/docs/concepts/configuration/secret/", "type": "docs", "note": "Secret types and the security caveats." },
+    { "title": "Good practices for Kubernetes Secrets", "url": "https://kubernetes.io/docs/concepts/security/secrets-good-practices/", "type": "docs", "note": "Official checklist: encryption at rest, least-privilege RBAC, external stores." },
+    { "title": "Encrypting Confidential Data at Rest", "url": "https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/", "type": "docs", "note": "EncryptionConfiguration providers, key rotation, verifying with etcdctl." },
+    { "title": "External Secrets Operator", "url": "https://external-secrets.io/", "type": "tool", "note": "Syncs secrets from AWS Secrets Manager, Vault, GCP and more into Kubernetes Secrets." },
+    { "title": "The Twelve-Factor App: Config", "url": "https://12factor.net/config", "type": "article", "note": "The original argument for config in the environment." },
+    { "title": "SOPS", "url": "https://github.com/getsops/sops", "type": "tool", "note": "Encrypts values in YAML/JSON files with KMS, age or PGP for GitOps." }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "title": "Terraform and Kubernetes",
+  "summary": "Provision a local kind cluster with Terraform, configure the kubernetes and helm providers from cluster outputs (including helm provider v3 syntax), deploy namespaces, workloads, Gateway API CRDs and Helm releases, avoid the two-phase apply trap, and draw the line between Terraform and GitOps. Ends with an EKS overview.",
+  "level": "advanced",
+  "estimatedMinutes": 210,
+  "objectives": [
+    "Create and destroy a kind cluster with the `tehcyx/kind` provider and expose its credentials as outputs",
+    "Configure the `kubernetes` and `helm` providers from another stack's outputs instead of a hard-coded kubeconfig",
+    "Write helm provider v3 syntax (`kubernetes = { ... }`, `set = [ ... ]`) and recognise v2-style blocks in old examples",
+    "Manage namespaces and deployments with `*_v1` resources and arbitrary objects with `kubernetes_manifest`",
+    "Explain the two-phase problem and split cluster, platform and workload stacks accordingly",
+    "Decide what belongs in Terraform (cluster, platform add-ons) and what belongs in a GitOps tool like Argo CD (applications)",
+    "Read an EKS configuration built with `terraform-aws-modules/eks` and estimate what it costs"
+  ],
+  "resources": [
+    { "title": "Kubernetes provider documentation", "url": "https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs", "type": "docs", "note": "Authentication options, `*_v1` resources and `kubernetes_manifest`." },
+    { "title": "Helm provider documentation", "url": "https://registry.terraform.io/providers/hashicorp/helm/latest/docs", "type": "docs", "note": "Provider configuration and the `helm_release` resource." },
+    { "title": "Helm provider v3 upgrade guide", "url": "https://github.com/hashicorp/terraform-provider-helm/blob/main/docs/guides/v3-upgrade-guide.md", "type": "docs", "note": "Exactly which blocks became nested attributes in v3." },
+    { "title": "tehcyx/kind provider", "url": "https://github.com/tehcyx/terraform-provider-kind", "type": "tool", "note": "Community provider that creates kind clusters from Terraform." },
+    { "title": "kind documentation", "url": "https://kind.sigs.k8s.io/", "type": "docs", "note": "Cluster config, port mappings and loading local images." },
+    { "title": "Gateway API", "url": "https://gateway-api.sigs.k8s.io/", "type": "docs", "note": "Gateway, HTTPRoute and how to install the CRDs." },
+    { "title": "Argo CD documentation", "url": "https://argo-cd.readthedocs.io/en/stable/", "type": "docs", "note": "GitOps continuous delivery for Kubernetes; where application delivery lives after Terraform." },
+    { "title": "terraform-aws-modules/eks", "url": "https://github.com/terraform-aws-modules/terraform-aws-eks", "type": "tool", "note": "The community EKS module; read the README's usage examples." }
+  ]
+}

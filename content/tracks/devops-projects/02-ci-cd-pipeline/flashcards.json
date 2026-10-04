@@ -1,0 +1,16 @@
+[
+  { "front": "Build once, promote many", "back": "Build each commit's image exactly once; dev and prod run the same digest. Promotion changes a pointer (values file), never rebuilds." },
+  { "front": "Push vs pull deployment", "back": "Push: CI holds cluster credentials and runs helm/kubectl. Pull (GitOps): an in-cluster agent (Argo CD) pulls desired state from Git and applies it; CI only commits. Pull wins for clusters: no external creds, private API server, drift detection, Git-based rollback." },
+  { "front": "Image tag strategy for CI", "back": "`sha-<7>` per commit (immutable), semver `1.4.0` + `1.4` on release tags, `main` for humans. Deploy by digest, with the readable tag alongside." },
+  { "front": "Why scan before push?", "back": "Build one platform with `load: true`, run Trivy as a gate, then build multi-arch and push from cache. Nothing unscanned or vulnerable ever reaches the registry." },
+  { "front": "SBOM vs provenance", "back": "SBOM: inventory of packages in the image (what is inside). Provenance: how it was built (source, commit, builder, parameters). buildx attaches both with `sbom: true` and `provenance: mode=max`." },
+  { "front": "Verify a GitHub artifact attestation", "back": "`gh attestation verify oci://ghcr.io/<owner>/<image>:<tag> --owner <owner>` checks the signed provenance came from your repo's workflow." },
+  { "front": "Why pin actions to commit SHAs?", "back": "Tags are mutable; in March 2026 trivy-action's tags were force-pushed to malicious code. A full SHA is immutable. Keep `# vX` comments and let Dependabot propose updates." },
+  { "front": "GitHub OIDC to AWS in one line", "back": "Job with `id-token: write` gets a JWT; `configure-aws-credentials` exchanges it via `AssumeRoleWithWebIdentity` for temporary creds, if the role's trust policy matches `aud` and `sub`." },
+  { "front": "What is the `sub` claim for a production environment job?", "back": "`repo:<owner>/<repo>:environment:production`. Restrict the deploy role's trust policy to exactly that." },
+  { "front": "Why don't GITHUB_TOKEN pushes cause workflow loops?", "back": "Events created with the workflow's `GITHUB_TOKEN` do not trigger new runs (except workflow_dispatch/repository_dispatch). Path filters add a second guard." },
+  { "front": "helm lint vs kubeconform", "back": "helm lint: chart structure and template rendering. kubeconform -strict: validates rendered manifests against Kubernetes (and CRD) schemas, catching unknown/mistyped fields." },
+  { "front": "Terraform checks in CI, cheapest first", "back": "`fmt -check` → `init` + `validate` → `terraform test` (mock providers) → `plan` against real state → apply/smoke/destroy in an ephemeral environment." },
+  { "front": "GitOps rollback", "back": "`git revert` the deployment commit in the values file and push; Argo CD syncs the previous digest. No rebuild, no pipeline, full audit trail." },
+  { "front": "act limitations", "back": "Different runner images, no OIDC, no environments/approvals, partial cache and artifact emulation. `ACT=true` lets steps opt out. Use for fast loops, not proof." }
+]

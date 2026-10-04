@@ -1,0 +1,15 @@
+[
+  { "front": "Exit codes 0, 1, 125, 126, 127", "back": "0 success; 1 app error; 125 docker run/daemon failed; 126 found but not executable; 127 command (or interpreter) not found." },
+  { "front": "Exit codes 137, 139, 143", "back": "137 SIGKILL (OOM, `docker kill`, stop timeout); 139 SIGSEGV (native crash); 143 SIGTERM (stopped, didn't handle it). Formula: 128 + signal." },
+  { "front": "How to tell OOM from a stop timeout (both 137)?", "back": "`docker inspect -f '{{.State.OOMKilled}}'` and `docker events`: `oom` then `die` vs `kill signal=15` then `kill signal=9` ~10 s later." },
+  { "front": "Why does PID 1 often ignore SIGTERM?", "back": "The kernel applies no default signal actions to PID 1 in a namespace; it must install handlers. Shells/npm as PID 1 also don't forward signals. Fix: exec-form CMD, SIGTERM handler, `--init`." },
+  { "front": "What does `--init` (Compose `init: true`) do?", "back": "Runs tini as PID 1, which forwards signals to your process and reaps zombie processes." },
+  { "front": "`exec format error`: two causes", "back": "Binary for another CPU architecture (arm64 vs amd64), or a script without a `#!` shebang run via exec." },
+  { "front": "`exec /x.sh: no such file or directory` but the file exists?", "back": "The shebang's interpreter is missing: CRLF line endings (`sh\\r`) or `#!/bin/bash` on Alpine." },
+  { "front": "Debug a shell-less container", "back": "`docker debug <c>` (Docker Desktop paid) or `docker run --rm -it --pid container:<c> --network container:<c> nicolaka/netshoot`; browse files via `/proc/1/root`." },
+  { "front": "Default logging driver and its trap", "back": "`json-file`, with no rotation by default. Set `log-opts` `max-size`/`max-file` or use the `local` driver; applies to new containers." },
+  { "front": "Disk usage and cleanup commands", "back": "`docker system df [-v]`, `container prune`, `image prune [-a]`, `builder prune`, `volume prune` (anonymous only unless `--all`), `system prune`." },
+  { "front": "Reproduce a failing container interactively", "back": "`docker run --rm -it --entrypoint sh <image>` then run the real command by hand." },
+  { "front": "Which images does a tag support?", "back": "`docker buildx imagetools inspect <image>` lists platforms; `docker image inspect -f '{{.Architecture}}'` shows a local image's arch." },
+  { "front": "Live resource usage per container", "back": "`docker stats` (CPU, memory/limit, net, block I/O, PIDs). TUIs: lazydocker, ctop." }
+]

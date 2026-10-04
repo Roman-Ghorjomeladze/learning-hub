@@ -1,0 +1,166 @@
+[
+  {
+    "type": "single",
+    "q": "Ten minutes after a deploy, error rates spike. You suspect the deploy but are not sure. What should you do first?",
+    "options": [
+      "Read the diff line by line until you find the bug",
+      "Restart all pods to clear any bad state",
+      "Roll back the deploy to mitigate, then investigate the root cause with the pressure off",
+      "Scale the database up"
+    ],
+    "answer": 2,
+    "explain": "Mitigate before you root-cause. Rollback is fast, well-tested and reversible; if errors stop, you have also confirmed the hypothesis. Debugging live extends the outage."
+  },
+  {
+    "type": "single",
+    "q": "A pod shows `CrashLoopBackOff`. `kubectl logs <pod>` prints only startup lines. Which command most likely shows why it crashed?",
+    "options": [
+      "`kubectl logs <pod> --previous`",
+      "`kubectl get pod <pod> -o wide`",
+      "`kubectl top pod <pod>`",
+      "`kubectl delete pod <pod>`"
+    ],
+    "answer": 0,
+    "explain": "After a crash the container restarts, so plain `logs` shows the new instance. `--previous` shows the output of the instance that died. Deleting the pod destroys that evidence."
+  },
+  {
+    "type": "single",
+    "q": "A container's Last State is `Terminated`, Reason `OOMKilled`, Exit Code 137, and the Node app logged no error. Which statement is correct?",
+    "options": [
+      "V8 ran out of heap; raise `--max-old-space-size`",
+      "The image has the wrong architecture",
+      "The liveness probe killed it",
+      "The kernel killed the process for exceeding the container memory limit; off-heap memory such as Buffers counts too"
+    ],
+    "answer": 3,
+    "explain": "137 = SIGKILL. The cgroup OOM killer counts total RSS (heap + Buffers + native). A V8 heap exhaustion instead prints `JavaScript heap out of memory` and exits 134, with reason `Error`."
+  },
+  {
+    "type": "single",
+    "q": "All requests return 503 from the Gateway. Pods are `Running` with `0/1` READY and zero restarts. What do you check first?",
+    "options": [
+      "Node disk pressure",
+      "The readiness probe failure message in `kubectl describe pod` and the Service's ready endpoints",
+      "The liveness probe configuration",
+      "The HPA status"
+    ],
+    "answer": 1,
+    "explain": "Not Ready with no restarts means readiness is failing (liveness would cause restarts). With no ready endpoints the proxy answers 503 itself. The probe failure message tells you whether it is the probe config or a dependency."
+  },
+  {
+    "type": "single",
+    "q": "After `kubectl rollout undo` restored service in Drill 3, why is the incident not fully resolved?",
+    "options": [
+      "`rollout undo` only restores the pod template; `spec.strategy: Recreate` remains and the next deploy will again drop all pods at once",
+      "Rollback deletes the ReplicaSet history",
+      "The Service selector was also changed",
+      "Undo disables the readiness probe"
+    ],
+    "answer": 0,
+    "explain": "Deployment-level fields such as `strategy`, `replicas` and `progressDeadlineSeconds` are not part of the pod template, so undo does not touch them. Always check the full diff against a known-good manifest."
+  },
+  {
+    "type": "multi",
+    "q": "A default-deny NetworkPolicy was applied an hour ago and nothing broke. After a routine deploy, the API cannot reach Postgres. Which explanations fit? (select all)",
+    "options": [
+      "DNS egress may also be missing, which would show up as name resolution failures",
+      "Many implementations enforce policies on new connections, so existing pooled connections kept working until pods restarted",
+      "There is no egress rule from the API pods to Postgres and/or no ingress rule on the Postgres pods",
+      "NetworkPolicies only take effect after 60 minutes"
+    ],
+    "answer": [
+      0,
+      1,
+      2
+    ],
+    "explain": "Policies are allow-lists needing both egress (client) and ingress (server) rules; established flows can survive policy changes, delaying the impact to the next restart. Missing DNS egress is a common second cause. There is no built-in delay."
+  },
+  {
+    "type": "single",
+    "q": "`kubectl get hpa` shows `cpu: <unknown>/50%` while `kubectl top pods` works. What is the most likely cause?",
+    "options": [
+      "metrics-server is not installed",
+      "`maxReplicas` is reached",
+      "The target containers have no CPU request, so utilisation cannot be computed",
+      "The Deployment uses Recreate"
+    ],
+    "answer": 2,
+    "explain": "HPA utilisation = usage / request. `kubectl top` working proves metrics-server is fine. `kubectl describe hpa` shows `missing request for cpu`."
+  },
+  {
+    "type": "single",
+    "q": "A new release fails with `exec /app/entrypoint.sh: exec format error`. Node and image architectures match. What is the likely cause?",
+    "options": [
+      "The file is not executable",
+      "The script is missing its shebang line (`#!/bin/sh`)",
+      "The image is too large",
+      "The container runs as non-root"
+    ],
+    "answer": 1,
+    "explain": "`execve` returns ENOEXEC for a file that is neither ELF for this CPU nor a `#!` script. Missing execute permission gives `permission denied` (exit 126). The other classic cause, wrong architecture, was ruled out."
+  },
+  {
+    "type": "single",
+    "q": "A StatefulSet's PVC is Pending because its `storageClassName` does not exist. What is the correct fix?",
+    "options": [
+      "`kubectl edit` the StatefulSet's `volumeClaimTemplates`",
+      "Add more nodes",
+      "Restart the kubelet",
+      "Delete the StatefulSet (and the stuck PVC), fix the class in the manifest and recreate it, since volume claim templates are immutable"
+    ],
+    "answer": 3,
+    "explain": "Most StatefulSet spec fields, including `volumeClaimTemplates`, cannot be updated. With real data you would orphan and migrate carefully; here the claim never bound, so delete and recreate."
+  },
+  {
+    "type": "single",
+    "q": "Terraform reports `Error acquiring the state lock`. The CI runner that held it crashed. What must you do before `terraform force-unlock`?",
+    "options": [
+      "Nothing; force-unlock is always safe",
+      "Delete the state file",
+      "Prove no process or CI job is still running an operation against that state, using the lock info (who, when, operation)",
+      "Run `terraform apply -lock=false`"
+    ],
+    "answer": 2,
+    "explain": "Unlocking a live operation allows two writers and can corrupt state. Confirm the holder is dead, then force-unlock with the lock ID and run a plan to reconcile what the interrupted apply left behind."
+  },
+  {
+    "type": "multi",
+    "q": "Helm says `another operation (install/upgrade/rollback) is in progress` after a CI job was killed mid-upgrade. Which are appropriate? (select all)",
+    "options": [
+      "Run `helm uninstall` and reinstall",
+      "Make CI timeouts longer than Helm's `--timeout` and use `--rollback-on-failure` (Helm 4) or `--atomic` (Helm 3)",
+      "Inspect `helm history` to find the last `deployed` revision",
+      "Run `helm rollback <release> <revision>` to that revision"
+    ],
+    "answer": [
+      1,
+      2,
+      3
+    ],
+    "explain": "The killed upgrade left a `pending-upgrade` record that acts as a lock; rolling back clears it. Uninstalling deletes everything the release owns. The prevention is to never kill Helm mid-operation and to let failed upgrades roll back automatically."
+  },
+  {
+    "type": "single",
+    "q": "Under load, pods restart repeatedly and 5xx spikes appear; at rest everything is fine. The Deployment has a 15m CPU limit and a liveness probe with `timeoutSeconds: 1`, `failureThreshold: 1`. What is happening?",
+    "options": [
+      "CPU throttling slows `/healthz` past the 1 s timeout, one failure triggers a restart, which reduces capacity and amplifies the overload",
+      "A memory leak",
+      "DNS ndots latency",
+      "The readiness probe is too lenient"
+    ],
+    "answer": 0,
+    "explain": "Aggressive liveness turns slowness into restarts, a self-amplifying failure. Remove or raise the CPU limit, set an honest request, and tune liveness to detect deadlocks (longer timeout, failureThreshold >= 3). Readiness is the tool for shedding load."
+  },
+  {
+    "type": "single",
+    "q": "Which sentence best reflects a blameless postmortem?",
+    "options": [
+      "\"Alex forgot to run the staging tests, causing the outage.\"",
+      "\"The pipeline allowed chart changes to merge without a staging smoke test; action: add an e2e check (owner, due date).\"",
+      "\"Engineers should be more careful with probes.\"",
+      "\"Root cause: human error.\""
+    ],
+    "answer": 1,
+    "explain": "Blameless postmortems describe how the system allowed the failure and produce owned, dated action items that change the system. \"Be more careful\" and \"human error\" change nothing."
+  }
+]

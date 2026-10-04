@@ -1,0 +1,158 @@
+[
+  {
+    "type": "single",
+    "q": "A vendor's monitoring container asks you to mount `/var/run/docker.sock`. What's the security implication?",
+    "options": [
+      "It's safe if the container runs as non-root",
+      "Anything that can talk to the socket controls the daemon and can start a privileged container mounting the host's `/`: effectively root on the host",
+      "It only allows reading container logs",
+      "None, the socket is read-only by default"
+    ],
+    "answer": 1,
+    "explain": "The Docker API has no fine-grained authorisation by default. Socket access equals host root. If unavoidable, use a filtering socket proxy that allows only the read-only endpoints needed, and never expose such a container to the internet."
+  },
+  {
+    "type": "multi",
+    "q": "Which runtime settings reduce the impact of a remote code execution bug in your Node API? (select all)",
+    "options": [
+      "`--privileged` so the app can self-heal",
+      "`--security-opt no-new-privileges`",
+      "`--read-only` with a `noexec` tmpfs for `/tmp`",
+      "`--cap-drop ALL`"
+    ],
+    "answer": [
+      1,
+      2,
+      3
+    ],
+    "explain": "Dropping capabilities, a read-only root filesystem and no-new-privileges all limit what an attacker can do after getting code execution. `--privileged` removes nearly all isolation."
+  },
+  {
+    "type": "single",
+    "q": "You need an npm token to install private packages during `docker build`. Which approach keeps the token out of the final image and its history?",
+    "options": [
+      "`COPY .npmrc` then `RUN npm ci && rm .npmrc`",
+      "`RUN --mount=type=secret,id=npmrc,target=/root/.npmrc npm ci` with `docker build --secret id=npmrc,src=.npmrc`",
+      "`ARG NPM_TOKEN` and pass `--build-arg`",
+      "`ENV NPM_TOKEN=...` in a builder stage only"
+    ],
+    "answer": 1,
+    "explain": "Secret mounts exist only during that `RUN` and are never written to a layer. Build args are recorded in history/provenance, deleted files remain in earlier layers, and ENV ends up in the image config of that stage (and in the cache)."
+  },
+  {
+    "type": "single",
+    "q": "Without user namespaces, what is UID 0 inside a container from the host kernel's perspective?",
+    "options": [
+      "UID 0, restricted by namespaces, dropped capabilities, seccomp and AppArmor/SELinux",
+      "UID 65534 (nobody)",
+      "The UID of the user who ran `docker run`",
+      "An unprivileged UID like 100000"
+    ],
+    "answer": 0,
+    "explain": "Without userns remapping or rootless mode, container root is host root with restrictions. If those restrictions fail, the attacker is root on the host. That's why non-root containers matter."
+  },
+  {
+    "type": "single",
+    "q": "What does `--security-opt no-new-privileges` prevent?",
+    "options": [
+      "Gaining privileges through `execve` of setuid/setgid binaries or files with capabilities",
+      "Creating new users inside the container",
+      "Adding new capabilities with `--cap-add`",
+      "Pulling new images"
+    ],
+    "answer": 0,
+    "explain": "It sets the kernel's `PR_SET_NO_NEW_PRIVS` flag, so executing `su`, `sudo` or any setuid binary can't raise the process's privileges."
+  },
+  {
+    "type": "single",
+    "q": "Trivy reports 40 HIGH/CRITICAL vulnerabilities in your image; 35 have no fixed version. What's a sensible CI policy?",
+    "options": [
+      "Switch to `latest` tags to always get fixes",
+      "Ignore scanning, it's too noisy",
+      "Fail on fixable CRITICAL (and possibly HIGH) findings, report the rest, and track accepted risks with expiry dates",
+      "Fail the build on every finding"
+    ],
+    "answer": 2,
+    "explain": "Gating on unfixable findings just trains people to bypass the gate. Fix what you can (newer base, dependency bumps), triage the rest by reachability, and document exceptions (e.g. `.trivyignore`, VEX) with expiry."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about SBOMs, provenance and signing are correct? (select all)",
+    "options": [
+      "Keyless cosign signing in CI uses the workflow's OIDC identity and a transparency log",
+      "BuildKit can attach SBOM and provenance attestations with `--sbom=true --provenance=mode=max`",
+      "You should sign the tag rather than the digest because tags are human-readable",
+      "An SBOM lists the packages inside an image so you can quickly find affected images when a new CVE appears"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "Tags are mutable pointers; sign and deploy **digests**, which are content hashes. SBOMs answer \"where is package X?\", provenance records how an image was built, and keyless signing ties a signature to a CI identity."
+  },
+  {
+    "type": "single",
+    "q": "Your hardened nginx container (`--cap-drop ALL --read-only`) exits with `mkdir() \"/var/cache/nginx/client_temp\" failed (30: Read-only file system)`. What's the right fix?",
+    "options": [
+      "Run with `--privileged`",
+      "Add a tmpfs mount for `/var/cache/nginx` (and `/run` for the pid file)",
+      "Add `--cap-add SYS_ADMIN`",
+      "Remove `--read-only`"
+    ],
+    "answer": 1,
+    "explain": "Give the process exactly the writable paths it needs via tmpfs or volumes and keep the root filesystem read-only. Removing protections is the wrong direction; `SYS_ADMIN` is nearly as bad as privileged."
+  },
+  {
+    "type": "single",
+    "q": "In March 2026, attackers rewrote version tags of a popular scanner's GitHub Actions to point at credential-stealing code. Which practice would have protected pipelines using those actions?",
+    "options": [
+      "Running the scanner less often",
+      "Using a larger runner",
+      "Using the `@latest` or `@master` reference",
+      "Pinning third-party actions to a full commit SHA and giving jobs minimal token permissions"
+    ],
+    "answer": 3,
+    "explain": "Tags in Git (like image tags) are mutable. A commit SHA is immutable. Combine SHA pinning with least-privilege `permissions:` so a compromised step can steal less."
+  },
+  {
+    "type": "multi",
+    "q": "Which are true about rootless Docker and user namespaces? (select all)",
+    "options": [
+      "Rootless mode runs the Docker daemon itself as an unprivileged user",
+      "Rootless mode has trade-offs such as networking performance and binding privileged ports",
+      "`userns-remap` maps container UIDs to unprivileged host UIDs while the daemon still runs as root",
+      "Rootless mode makes `--privileged` completely safe and is the default on all Linux distros"
+    ],
+    "answer": [
+      0,
+      1,
+      2
+    ],
+    "explain": "Both reduce the blast radius of an escape. Rootless isn't the default for Docker Engine (Podman is rootless by default), and nothing makes `--privileged` safe."
+  },
+  {
+    "type": "single",
+    "q": "Why is a distroless or hardened base image a good runtime choice for shipit?",
+    "options": [
+      "It makes Node.js run faster",
+      "It includes debugging tools by default",
+      "It contains only the runtime and its libraries: fewer packages to patch, fewer CVEs, and no shell or package manager for an attacker",
+      "It automatically signs the image"
+    ],
+    "answer": 2,
+    "explain": "Minimal images reduce attack surface and noise in scans. The trade-off is debugging without a shell, solved with ephemeral debug containers (module 09)."
+  },
+  {
+    "type": "single",
+    "q": "`docker info --format '{{.SecurityOptions}}'` shows `name=seccomp,profile=builtin`. What does that mean?",
+    "options": [
+      "Containers get Docker's default seccomp profile, which blocks dozens of dangerous syscalls unless you override it",
+      "Seccomp is only used during builds",
+      "Only privileged containers are filtered",
+      "Seccomp is disabled"
+    ],
+    "answer": 0,
+    "explain": "The default profile is applied to every container unless you pass `--security-opt seccomp=unconfined` (don't) or a custom profile. Many escape techniques rely on syscalls it blocks."
+  }
+]

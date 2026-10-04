@@ -1,0 +1,15 @@
+[
+  { "front": "What happens to data in a container's writable layer on `docker stop` vs `docker rm`?", "back": "`stop` keeps it (the container still exists). `rm` deletes the writable layer and everything in it." },
+  { "front": "What is copy-up in overlay2?", "back": "The first time a container modifies a file from a read-only image layer, the whole file is copied into the writable layer. Big files make this slow, which is one reason databases belong on volumes." },
+  { "front": "Named volume vs bind mount vs tmpfs: one-line use case each", "back": "Named volume: data you keep (DBs, uploads). Bind mount: host files in dev (source, single config files). tmpfs: RAM-only scratch or secrets that vanish on stop." },
+  { "front": "How does `-v` decide between a bind mount and a named volume?", "back": "If the source starts with `/` or `.` (after shell expansion), it's a bind mount; otherwise it's a volume name. `-v data:/data` creates a volume named `data`." },
+  { "front": "Key behavioural difference between `-v` and `--mount type=bind`?", "back": "If the host path is missing, `-v` silently creates an empty directory; `--mount` fails with an error." },
+  { "front": "What is volume pre-population?", "back": "When an **empty named volume** is mounted on a path that has content in the image, Docker copies that content (with ownership) into the volume. Bind mounts never do this. Disable with `volume-nocopy`." },
+  { "front": "Why do permission errors happen on mounts?", "back": "The kernel compares **numeric** UID/GID of the process with the file owner. Names inside the container are irrelevant. Fix ownership in the image, use `--user $(id -u):$(id -g)` for dev bind mounts, or chown in an entrypoint." },
+  { "front": "Where should you mount the data volume for the `postgres:18` image?", "back": "`/var/lib/postgresql`. From 18, PGDATA is `/var/lib/postgresql/18/docker` and the image declares `VOLUME /var/lib/postgresql`. Pre-18 used `/var/lib/postgresql/data`." },
+  { "front": "How do you back up a named volume?", "back": "`docker run --rm -v vol:/data:ro -v \"$PWD\":/backup alpine tar czf /backup/vol.tgz -C /data .` (stop writers first). Restore by untarring into a new volume. For DBs prefer `pg_dump`." },
+  { "front": "Why are bind mounts slow on macOS?", "back": "Containers run in a Linux VM; bind mounts cross a file-sharing layer (VirtioFS) for every file operation. Volumes live on the VM's own disk and run at native speed." },
+  { "front": "How do you stop a bind mount of `.` from hiding the image's `node_modules`?", "back": "Add a more specific mount: `-v /app/node_modules` (anonymous) or a named volume at `/app/node_modules`, or mount only `src/`, or use `docker compose watch`." },
+  { "front": "What does `docker volume prune` remove by default (Engine 23+)?", "back": "Only unused **anonymous** volumes. Add `--all` to include unused named volumes. Volumes referenced by any container (even stopped) are kept." },
+  { "front": "One-liner to see a container's mounts", "back": "`docker inspect -f '{{json .Mounts}}' <container>` (shows Type, Name, Source, Destination, RW)." }
+]

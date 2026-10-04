@@ -1,0 +1,24 @@
+{
+  "title": "Observability & Troubleshooting",
+  "summary": "A systematic way to debug anything in Kubernetes, what every pod status really means, kubectl debug, and the metrics, logs, traces and alerts stack (metrics-server, Prometheus, Grafana, Loki, OpenTelemetry) you need in production.",
+  "level": "advanced",
+  "estimatedMinutes": 270,
+  "objectives": [
+    "Apply a repeatable troubleshooting flow: get, describe, events, logs, exec/debug",
+    "Map pod statuses (Pending, ImagePullBackOff, CrashLoopBackOff, CreateContainerConfigError, OOMKilled, Evicted, stuck Terminating) to their usual causes and fixes",
+    "Work through a 'Service not reachable' checklist from DNS to endpoints to NetworkPolicy",
+    "Use kubectl debug for ephemeral containers, pod copies and node debugging",
+    "Explain the metrics pipeline (metrics-server vs Prometheus) and install kube-prometheus-stack",
+    "Describe a production logging and tracing setup (stdout, Fluent Bit/Alloy, Loki, OpenTelemetry)",
+    "Write a basic PrometheusRule alert and know what makes alerts useful"
+  ],
+  "resources": [
+    { "title": "Monitoring, Logging, and Debugging", "url": "https://kubernetes.io/docs/tasks/debug/", "type": "docs", "note": "Official debugging guides for pods, Services, nodes and clusters." },
+    { "title": "Debug Running Pods", "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/", "type": "docs", "note": "kubectl debug, ephemeral containers, copies, node debugging." },
+    { "title": "metrics-server", "url": "https://github.com/kubernetes-sigs/metrics-server", "type": "tool", "note": "Resource metrics for kubectl top and HPA." },
+    { "title": "prometheus-community Helm charts", "url": "https://github.com/prometheus-community/helm-charts", "type": "tool", "note": "Home of kube-prometheus-stack." },
+    { "title": "Prometheus overview", "url": "https://prometheus.io/docs/introduction/overview/", "type": "docs", "note": "Data model, PromQL, alerting." },
+    { "title": "Grafana Loki documentation", "url": "https://grafana.com/docs/loki/latest/", "type": "docs", "note": "Log aggregation indexed by labels." },
+    { "title": "OpenTelemetry documentation", "url": "https://opentelemetry.io/docs/", "type": "docs", "note": "SDKs (including Node.js), Collector and Kubernetes operator." }
+  ]
+}

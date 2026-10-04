@@ -1,0 +1,177 @@
+[
+  {
+    "type": "single",
+    "q": "You apply a valid Ingress to a fresh kind cluster and nothing happens: no address, no routing, no errors. What is the most likely cause?",
+    "options": [
+      "No Ingress controller is installed (or none serves the `ingressClassName`)",
+      "The Ingress API is deprecated and disabled by default",
+      "kind does not support Layer 7 traffic",
+      "The Service must be of type `LoadBalancer` for an Ingress to work"
+    ],
+    "answer": 0,
+    "explain": "Kubernetes ships the Ingress *API* but no implementation. Without a controller watching that IngressClass, the object just sits in etcd. Backends are normally ClusterIP Services."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about the 2026 ingress-nginx retirement are accurate? (select all)",
+    "options": [
+      "The community `kubernetes/ingress-nginx` controller stopped receiving releases and security fixes after March 2026",
+      "The Ingress API (`networking.k8s.io/v1`) was removed from Kubernetes",
+      "Existing installations keep working, but will not get CVE fixes",
+      "F5's NGINX Ingress Controller is a separate product and was not part of this retirement",
+      "Gateway API is the recommended migration target"
+    ],
+    "answer": [
+      0,
+      2,
+      3,
+      4
+    ],
+    "explain": "Only the community controller was retired (best-effort maintenance until March 2026, then repos read-only). The Ingress API remains GA. F5's controller is a different project. Kubernetes recommends Gateway API, with `ingress2gateway` to help convert."
+  },
+  {
+    "type": "single",
+    "q": "In Gateway API's role-oriented model, which resource is typically owned by application developers?",
+    "options": [
+      "GatewayClass",
+      "Gateway",
+      "HTTPRoute",
+      "The controller Deployment"
+    ],
+    "answer": 2,
+    "explain": "Infra providers own GatewayClass, cluster operators own Gateways (listeners, TLS, which namespaces may attach), and app teams own HTTPRoutes in their namespaces."
+  },
+  {
+    "type": "single",
+    "q": "An HTTPRoute in namespace `shop` points at Gateway `infra/edge`. Its status shows `Accepted=False` with reason `NotAllowedByListeners`. The Gateway listener has no `allowedRoutes` field. What is the fix?",
+    "options": [
+      "Create a ReferenceGrant in `shop`",
+      "Create a ReferenceGrant in `infra`",
+      "Move the backend Service into `infra`",
+      "Set `allowedRoutes.namespaces.from` to `All` or a `Selector` matching `shop` on the listener"
+    ],
+    "answer": 3,
+    "explain": "`allowedRoutes` defaults to `from: Same`, so only routes in `infra` can attach. Route attachment is controlled by the Gateway's `allowedRoutes`, not by ReferenceGrant. ReferenceGrant is for references to objects such as Services or Secrets in another namespace."
+  },
+  {
+    "type": "single",
+    "q": "A route in `shop` has a `backendRef` to Service `payments-api` in namespace `payments`. Status: `ResolvedRefs=False`, reason `RefNotPermitted`. Where must the ReferenceGrant be created?",
+    "options": [
+      "In `shop`, listing `payments` in `to`",
+      "In `payments`, with `from` = HTTPRoute in `shop` and `to` = Service",
+      "In `infra`, next to the Gateway",
+      "Cluster-scoped, since it spans namespaces"
+    ],
+    "answer": 1,
+    "explain": "The referenced side consents: the ReferenceGrant lives in the target namespace (`payments`) and lists who may reference what. This stops one team from pointing traffic at another team's Services without permission."
+  },
+  {
+    "type": "single",
+    "q": "You want 10% of `/api` traffic to go to `api-v2`. Which HTTPRoute feature do you use?",
+    "options": [
+      "Two rules with identical matches; the proxy alternates",
+      "A `RequestMirror` filter to `api-v2`",
+      "`weight` on each `backendRef` in the same rule (for example 90 and 10)",
+      "`sessionPersistence` with 10% sticky clients"
+    ],
+    "answer": 2,
+    "explain": "Weighted `backendRefs` split traffic proportionally (weights are relative). `RequestMirror` copies traffic to a shadow backend but its responses are discarded, so users never see v2."
+  },
+  {
+    "type": "multi",
+    "q": "Which of these are core HTTPRoute filters defined by the Gateway API spec (not implementation-specific)? (select all)",
+    "options": [
+      "`RequestRedirect`",
+      "`URLRewrite`",
+      "`RequestHeaderModifier`",
+      "`RateLimit`",
+      "`RequestMirror`"
+    ],
+    "answer": [
+      0,
+      1,
+      2,
+      4
+    ],
+    "explain": "Redirects, rewrites, header modifiers and mirroring are in the spec. Rate limiting is implementation-specific (for example Envoy Gateway's `BackendTrafficPolicy`)."
+  },
+  {
+    "type": "multi",
+    "q": "A listener has `hostname: \"*.example.com\"`. Which route hostnames can attach to it? (select all)",
+    "options": [
+      "`example.com`",
+      "`api.example.com`",
+      "`a.b.example.com`",
+      "`shipit.localhost`"
+    ],
+    "answer": [
+      1,
+      2
+    ],
+    "explain": "In Gateway API a leading `*.` is a **suffix match**: `*.example.com` matches `api.example.com` and `a.b.example.com`, but not the apex `example.com`. Note the difference from TLS certificates, where a wildcard SAN covers exactly one label, so a `*.example.com` certificate would not be valid for `a.b.example.com`."
+  },
+  {
+    "type": "single",
+    "q": "Why does the local TLS setup create a CA certificate with cert-manager instead of issuing self-signed leaf certificates directly?",
+    "options": [
+      "You trust one CA certificate once, and every leaf it signs is trusted, the same way production works with a public CA",
+      "Envoy refuses self-signed certificates",
+      "Self-signed certificates cannot contain SANs",
+      "cert-manager cannot renew self-signed certificates"
+    ],
+    "answer": 0,
+    "explain": "Each self-signed leaf would have to be trusted individually. With a CA issuer, you pass `--cacert` (or add the CA to Keychain) once and all leaf certs validate."
+  },
+  {
+    "type": "single",
+    "q": "An HTTPRoute's backendRef uses `port: 5678`, the container port, while the Service exposes `port: 80, targetPort: 5678`. What happens?",
+    "options": [
+      "It works; Gateway API uses container ports",
+      "Kubernetes rejects the HTTPRoute at admission",
+      "The controller rewrites it to 80 automatically",
+      "The backend is not resolved correctly and requests fail, because `backendRefs.port` is the Service port"
+    ],
+    "answer": 3,
+    "explain": "Like Ingress, `backendRefs.port` refers to the Service port. A port the Service does not expose cannot be resolved; you typically see a status condition and 500/503 responses."
+  },
+  {
+    "type": "multi",
+    "q": "You are on kind with Envoy Gateway. The Gateway's Envoy Service shows `EXTERNAL-IP <pending>`. How can you reach it from your Mac? (select all)",
+    "options": [
+      "`kubectl port-forward` to the Envoy Service",
+      "Run cloud-provider-kind on the host to assign LoadBalancer addresses",
+      "Use NodePort plus kind `extraPortMappings`",
+      "It is unreachable until you deploy to a cloud provider"
+    ],
+    "answer": [
+      0,
+      1,
+      2
+    ],
+    "explain": "kind has no cloud LB, so the Service stays pending, but port-forwarding, cloud-provider-kind, or a NodePort mapped through `extraPortMappings` all work."
+  },
+  {
+    "type": "single",
+    "q": "Your NestJS API behind the Gateway logs every request as coming from the same IP, which breaks per-client rate limiting. What should you check?",
+    "options": [
+      "Whether the HTTPRoute uses `PathPrefix` instead of `Exact`",
+      "That the proxy sets `X-Forwarded-For` correctly and the app is configured to trust the proxy (`trust proxy`)",
+      "That the Service uses `sessionAffinity: ClientIP`",
+      "That the pods have a readiness probe"
+    ],
+    "answer": 1,
+    "explain": "The app sees the proxy's connection. The real client IP arrives in `X-Forwarded-For` (or PROXY protocol from the LB). Express/NestJS only use it when `trust proxy` is configured, so the proxy hops must be trusted explicitly."
+  },
+  {
+    "type": "single",
+    "q": "Which status condition tells you a Gateway's data plane has been configured by its controller?",
+    "options": [
+      "`Programmed`",
+      "`Ready`",
+      "`ResolvedRefs`",
+      "`Available`"
+    ],
+    "answer": 0,
+    "explain": "`Programmed=True` on a Gateway means the controller has configured the underlying proxy. `ResolvedRefs` applies to routes and listeners (references resolved); `Accepted` means the config is valid."
+  }
+]

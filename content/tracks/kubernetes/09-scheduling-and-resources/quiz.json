@@ -1,0 +1,178 @@
+[
+  {
+    "type": "single",
+    "q": "What does the scheduler use to decide whether a pod fits on a node?",
+    "options": [
+      "The node's current actual CPU and memory usage from metrics-server",
+      "The pod's requests compared with the node's allocatable capacity minus requests of pods already there",
+      "The pod's limits compared with the node's capacity",
+      "The number of pods on the node only"
+    ],
+    "answer": 1,
+    "explain": "Scheduling is purely request-based. A node with idle CPU can still be \"full\" if its requests add up to allocatable. Limits are enforced at runtime, not used for fitting."
+  },
+  {
+    "type": "single",
+    "q": "Your NestJS API has a CPU limit of `500m`. Average CPU is 30%, but p99 latency is high during bursts. What is the most likely explanation?",
+    "options": [
+      "The pod is being OOMKilled",
+      "The readiness probe is failing",
+      "CFS throttling: bursts exhaust the 50 ms per 100 ms quota and the process is paused",
+      "The node is out of memory"
+    ],
+    "answer": 2,
+    "explain": "CPU limits throttle within each 100 ms period. Averages hide this. Check `nr_throttled` in `cpu.stat` or `container_cpu_cfs_throttled_periods_total`, and consider raising or removing the CPU limit."
+  },
+  {
+    "type": "single",
+    "q": "A container's last state shows `exitCode: 137, reason: OOMKilled`. What happened?",
+    "options": [
+      "The kernel killed the process because the container exceeded its memory limit",
+      "The V8 heap limit was reached",
+      "The kubelet evicted the pod due to disk pressure",
+      "The liveness probe failed"
+    ],
+    "answer": 0,
+    "explain": "137 = 128 + SIGKILL(9), and `OOMKilled` means the cgroup memory limit was hit. A V8 heap OOM aborts with exit 134 and a `JavaScript heap out of memory` message instead."
+  },
+  {
+    "type": "single",
+    "q": "A pod has two containers. Container A has CPU and memory requests equal to limits. Container B has no resources set. What is the pod's QoS class?",
+    "options": [
+      "Guaranteed",
+      "It depends on the node",
+      "BestEffort",
+      "Burstable"
+    ],
+    "answer": 3,
+    "explain": "Guaranteed requires every container to have CPU and memory requests equal to limits. BestEffort requires no container to have any. Anything in between is Burstable."
+  },
+  {
+    "type": "single",
+    "q": "A Deployment shows `READY 3/5`. There are no Pending pods and no warning events on the Deployment. Where do you look next?",
+    "options": [
+      "The scheduler logs",
+      "The ReplicaSet's events, for example `exceeded quota` from a ResourceQuota",
+      "The kubelet logs on each node",
+      "The Service's endpoints"
+    ],
+    "answer": 1,
+    "explain": "When admission (such as a ResourceQuota or LimitRange) rejects pod creation, no pod object exists. The ReplicaSet records `FailedCreate` events with the reason."
+  },
+  {
+    "type": "multi",
+    "q": "A pod is Pending with: `0/4 nodes are available: 1 node(s) had untolerated taint {node-role.kubernetes.io/control-plane: }, 3 Insufficient memory.` Which actions could make it schedulable? (select all)",
+    "options": [
+      "Lower the pod's memory request",
+      "Add nodes or free memory requests on existing nodes",
+      "Lower the pod's memory limit while keeping the request",
+      "Remove other pods' requests or scale down other workloads"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "Insufficient memory refers to requests vs allocatable. Changing only the limit does not affect scheduling. Smaller requests, more capacity, or freeing requested capacity all help."
+  },
+  {
+    "type": "single",
+    "q": "You taint a node `dedicated=batch:NoSchedule` and add a matching toleration to your batch Job. The Job's pods still land on other nodes. Why?",
+    "options": [
+      "A toleration only allows scheduling onto the tainted node; you also need a nodeSelector or node affinity to attract the pods there",
+      "Tolerations only work with `NoExecute`",
+      "The taint must be applied before the node joins the cluster",
+      "Jobs ignore tolerations"
+    ],
+    "answer": 0,
+    "explain": "Taints repel, tolerations permit, affinity/nodeSelector attract. Dedicated nodes use a taint plus a label selected by the workload."
+  },
+  {
+    "type": "single",
+    "q": "Six replicas use `topologySpreadConstraints` with `maxSkew: 1` across zones `a`, `b`, `c` and `DoNotSchedule`. Zone `c` only has nodes with a taint the pods do not tolerate, and no `nodeTaintsPolicy` is set. What happens?",
+    "options": [
+      "3 pods in `a` and 3 in `b`",
+      "All pods go to zone `c`",
+      "Only 2 pods run (one in `a`, one in `b`); the rest stay Pending because zone `c` counts as an empty domain",
+      "The constraint is ignored when a zone is tainted"
+    ],
+    "answer": 2,
+    "explain": "The default `nodeTaintsPolicy: Ignore` includes tainted nodes in skew calculations. Zone `c` has 0 pods, so `a` and `b` are capped at 1. Set `nodeTaintsPolicy: Honor` to exclude untolerated nodes."
+  },
+  {
+    "type": "single",
+    "q": "Why does a pod running on a node that suddenly dies typically get replaced only after about five minutes?",
+    "options": [
+      "The scheduler runs every five minutes",
+      "The kubelet must confirm the deletion first",
+      "The ReplicaSet controller waits for the pod's terminationGracePeriodSeconds",
+      "Pods get default tolerations for `node.kubernetes.io/not-ready` and `unreachable` with `tolerationSeconds: 300`"
+    ],
+    "answer": 3,
+    "explain": "When a node becomes NotReady/unreachable it gets `NoExecute` taints. Pods tolerate them for 300 s by default, then they are evicted and replaced. You can lower `tolerationSeconds` for faster failover."
+  },
+  {
+    "type": "single",
+    "q": "A team set a PDB with `minAvailable: 3` on a 3-replica Deployment. What is the consequence?",
+    "options": [
+      "Drains evict pods one at a time",
+      "No pod can ever be voluntarily evicted, so node drains, upgrades and consolidation hang",
+      "The Deployment cannot scale",
+      "The PDB is ignored by `kubectl drain`"
+    ],
+    "answer": 1,
+    "explain": "With 3 replicas and `minAvailable: 3`, zero disruptions are allowed. Use `maxUnavailable: 1` with at least 2 replicas."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about PriorityClasses and preemption are true? (select all)",
+    "options": [
+      "A pending higher-priority pod may cause lower-priority pods to be evicted to make room",
+      "`preemptionPolicy: Never` gives a pod queue priority without evicting others",
+      "Preemption strictly guarantees PodDisruptionBudgets are never violated",
+      "Victims receive their graceful termination period"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "Preemption tries to respect PDBs but does not guarantee it. Victims are deleted gracefully. `Never` keeps scheduling-queue priority without preempting."
+  },
+  {
+    "type": "single",
+    "q": "A Node.js service runs with a 512Mi memory limit. What is a sensible heap setting?",
+    "options": [
+      "`--max-old-space-size=512` so the heap can use the full limit",
+      "`--max-old-space-size=4096` to avoid heap errors",
+      "`--max-old-space-size=384`, leaving room for Buffers, native memory and stacks",
+      "No setting; the heap is unrelated to container memory"
+    ],
+    "answer": 2,
+    "explain": "Keep the heap around 70 to 80 percent of the limit. A heap as big as the limit lets total RSS exceed it, turning a clear heap error into a kernel OOMKill."
+  },
+  {
+    "type": "single",
+    "q": "`kubectl top pods` returns `error: Metrics API not available`. What is missing?",
+    "options": [
+      "metrics-server (serving the `metrics.k8s.io` API)",
+      "Prometheus",
+      "The Vertical Pod Autoscaler",
+      "cAdvisor must be enabled on each pod"
+    ],
+    "answer": 0,
+    "explain": "`kubectl top` and the HPA read the resource metrics API served by metrics-server. On kind it needs `--kubelet-insecure-tls` because kubelet serving certs are self-signed."
+  },
+  {
+    "type": "single",
+    "q": "You add a new node to a busy cluster. What happens to existing pods?",
+    "options": [
+      "The scheduler rebalances them onto the new node",
+      "Pods with `PreferNoSchedule` are moved",
+      "DaemonSet pods move to the new node",
+      "Nothing; scheduling decisions are made once, and only new or recreated pods may land on the new node"
+    ],
+    "answer": 3,
+    "explain": "The scheduler does not move running pods. New DaemonSet pods are created on the new node, but existing pods stay put unless something (rollout, descheduler, eviction) recreates them."
+  }
+]

@@ -1,0 +1,170 @@
+[
+  {
+    "type": "single",
+    "q": "Your dev and prod environments live in different AWS accounts and prod has extra components (WAF, read replicas). Which layout fits best?",
+    "options": [
+      "A directory per environment, each a thin root module calling shared modules with its own backend and provider config",
+      "Separate Git repositories with copy-pasted code",
+      "One directory with CLI workspaces `dev` and `prod`",
+      "One state file containing both environments"
+    ],
+    "answer": 0,
+    "explain": "CLI workspaces share one backend configuration and push structural differences into conditionals. Per-environment directories naturally have different backends, accounts and extra modules, while shared modules avoid copy-paste."
+  },
+  {
+    "type": "single",
+    "q": "Where do CLI workspaces genuinely shine?",
+    "options": [
+      "Storing secrets per environment",
+      "Replacing modules",
+      "Short-lived copies of the same configuration, such as per-branch preview environments or test runs",
+      "Separating prod from dev in different AWS accounts"
+    ],
+    "answer": 2,
+    "explain": "Workspaces give several states for one configuration with one backend config, ideal for disposable, structurally identical copies. For long-lived environments, the hidden current-workspace state is a footgun."
+  },
+  {
+    "type": "single",
+    "q": "`terraform validate` passes, but apply fails with an invalid instance type `t9.micro`. Which tool would have caught this before apply?",
+    "options": [
+      "TFLint with the AWS ruleset",
+      "`terraform output`",
+      "`terraform fmt`",
+      "`terraform graph`"
+    ],
+    "answer": 0,
+    "explain": "`validate` checks syntax and schema types, not provider-specific valid values. TFLint's AWS ruleset knows valid instance types, regions and more. Trivy/Checkov focus on security misconfigurations."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about `terraform test` with `mock_provider` are true? (select all)",
+    "options": [
+      "`expect_failures = [var.environment]` asserts that a variable validation fails",
+      "Computed attributes get generated fake values",
+      "It needs no cloud credentials and creates no real resources",
+      "It proves AWS will accept the configuration"
+    ],
+    "answer": [
+      0,
+      1,
+      2
+    ],
+    "explain": "Mocks test your module's logic fast and for free. Because no API is called, they cannot prove the real service accepts the config; keep some integration tests that really apply."
+  },
+  {
+    "type": "single",
+    "q": "In a `.tftest.hcl` file, how does a later run read an output named `urls` from an earlier run called `deploy`?",
+    "options": [
+      "`module.deploy.urls`",
+      "`run.deploy.urls`",
+      "`output.deploy.urls`",
+      "`var.deploy.urls`"
+    ],
+    "answer": 1,
+    "explain": "Run outputs are exposed as `run.<run_name>.<output_name>`. Within a run's own assertions, its outputs are `output.<name>`."
+  },
+  {
+    "type": "single",
+    "q": "A GitHub Actions workflow must run `terraform apply` against AWS. What is the recommended authentication?",
+    "options": [
+      "The root account's credentials stored as an organisation secret",
+      "An IAM user access key stored as a repository secret",
+      "A self-hosted runner with an admin key in `~/.aws/credentials`",
+      "OIDC: the workflow requests a token (`id-token: write`) and assumes an IAM role whose trust policy restricts the `sub` claim to the repo and environment"
+    ],
+    "answer": 3,
+    "explain": "OIDC federation yields short-lived credentials with no stored secret. The trust policy should pin `aud` to `sts.amazonaws.com` and `sub` to e.g. `repo:org/repo:environment:production`."
+  },
+  {
+    "type": "single",
+    "q": "Your apply job uses `environment: production`. The role's trust policy allows `sub = repo:acme/infra:ref:refs/heads/main`. The job fails with `Not authorized to perform sts:AssumeRoleWithWebIdentity`. Why?",
+    "options": [
+      "OIDC does not work on the main branch",
+      "The role needs `AdministratorAccess`",
+      "The `aud` must be `github.com`",
+      "When a job targets an environment, the `sub` claim becomes `repo:acme/infra:environment:production`, which the trust policy doesn't allow"
+    ],
+    "answer": 3,
+    "explain": "The `sub` claim format depends on context: environment, branch ref, tag or pull_request. With an environment, it's the environment form. Update the condition (ideally to the environment, which also enforces required reviewers)."
+  },
+  {
+    "type": "multi",
+    "q": "A nightly job runs `terraform plan -detailed-exitcode`. Which exit codes mean what? (select all that are correct)",
+    "options": [
+      "0 = no changes",
+      "1 = error",
+      "2 = changes present (drift or unapplied code)",
+      "3 = drift fixed automatically"
+    ],
+    "answer": [
+      0,
+      1,
+      2
+    ],
+    "explain": "`-detailed-exitcode` returns 0 for an empty diff, 1 for errors and 2 when there are changes. Terraform never fixes drift during a plan."
+  },
+  {
+    "type": "single",
+    "q": "Drift shows an ASG's `desired_capacity` changed from 2 to 5 by the autoscaler. What is the right response?",
+    "options": [
+      "Add `lifecycle { ignore_changes = [desired_capacity] }` because another system legitimately owns that field",
+      "Run `terraform apply -refresh-only` every hour",
+      "Apply to force it back to 2 every night",
+      "Delete the ASG from state"
+    ],
+    "answer": 0,
+    "explain": "Fields owned by another controller should be ignored, otherwise Terraform and the autoscaler fight. Reverting is right for unauthorized console changes; `-refresh-only` just records reality in state without fixing the ownership conflict."
+  },
+  {
+    "type": "single",
+    "q": "CI on Linux fails `terraform init` with a checksum mismatch for a provider, while it works on your Mac. What is the likely fix?",
+    "options": [
+      "Run `terraform providers lock -platform=darwin_arm64 -platform=linux_amd64` and commit the updated lock file",
+      "Downgrade the provider",
+      "Delete `.terraform.lock.hcl` from the repo",
+      "Use `-lock=false`"
+    ],
+    "answer": 0,
+    "explain": "The lock file stores package hashes per platform. Recording hashes for every platform you run on keeps verification working everywhere. `-lock=false` is about state locking, unrelated to the dependency lock file."
+  },
+  {
+    "type": "single",
+    "q": "What does policy as code (OPA/Conftest or Sentinel) add beyond module tests?",
+    "options": [
+      "Organisation-wide rules evaluated against every plan, regardless of which module or team produced it",
+      "Faster applies",
+      "Automatic drift correction",
+      "It replaces code review entirely"
+    ],
+    "answer": 0,
+    "explain": "Module tests prove a module behaves as its author intended. Policies, owned by platform/security teams, enforce rules like 'no public buckets' or 'no 0.0.0.0/0 on SSH' on any plan, typically using `terraform show -json` output."
+  },
+  {
+    "type": "multi",
+    "q": "Which practices reduce the blast radius of Terraform changes? (select all)",
+    "options": [
+      "`prevent_destroy` and cloud deletion protection on databases and state buckets",
+      "Separate state per environment and per component (network, data, services)",
+      "One giant state for the whole company so everything is consistent",
+      "Read-only plan roles for PRs and a separate, protected apply role"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "Small states limit what a single plan can touch and enable finer permissions. A single giant state makes every plan slow and every mistake potentially catastrophic."
+  },
+  {
+    "type": "single",
+    "q": "Your PR re-plans and applies on merge to `main`. A reviewer worries the applied changes might differ from the PR plan. Which mitigation applies exactly what was reviewed?",
+    "options": [
+      "Run `terraform fmt` before apply",
+      "Add `-refresh=false` to apply",
+      "Save the PR plan (`-out=tfplan`) as an artifact and apply that file; Terraform refuses a stale saved plan if state changed",
+      "Use `-parallelism=1`"
+    ],
+    "answer": 2,
+    "explain": "A saved plan applies exactly the reviewed actions and fails if the state has changed since. Requiring up-to-date branches or using Atlantis/HCP Terraform-style PR locking are other approaches."
+  }
+]

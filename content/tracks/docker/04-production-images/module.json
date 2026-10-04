@@ -1,0 +1,25 @@
+{
+  "title": "Production Images",
+  "summary": "Turn a working image into a production one: multi-stage TypeScript builds, the right base image (slim, alpine, distroless, Chainguard/Wolfi, Docker Hardened Images), non-root users, BuildKit cache/secret/SSH mounts, multi-platform builds with buildx, health checks, OCI labels, SBOM and provenance attestations, tagging strategy and linting.",
+  "level": "intermediate",
+  "estimatedMinutes": 180,
+  "objectives": [
+    "Write a multi-stage Dockerfile that compiles TypeScript and ships only production dependencies and build output",
+    "Compare base image families and choose one based on size, CVEs, debuggability and libc compatibility",
+    "Run containers as a non-root user and understand the Kubernetes runAsNonRoot implications",
+    "Use BuildKit cache mounts, secret mounts and SSH mounts without leaking credentials into layers",
+    "Build and push multi-platform (linux/amd64 + linux/arm64) images with buildx and inspect manifest lists",
+    "Add HEALTHCHECK, OCI labels, SBOM and provenance attestations, and apply a semver + git SHA tagging strategy",
+    "Lint Dockerfiles with hadolint and scan images with Trivy"
+  ],
+  "resources": [
+    { "title": "Multi-stage builds", "url": "https://docs.docker.com/build/building/multi-stage/", "type": "docs", "note": "Stages, --target and COPY --from." },
+    { "title": "Multi-platform builds", "url": "https://docs.docker.com/build/building/multi-platform/", "type": "docs", "note": "QEMU, cross-compilation and builder requirements." },
+    { "title": "Build secrets", "url": "https://docs.docker.com/build/building/secrets/", "type": "docs", "note": "Secret and SSH mounts." },
+    { "title": "Build attestations (SBOM and provenance)", "url": "https://docs.docker.com/build/metadata/attestations/", "type": "docs", "note": "What attestations are and how to generate them." },
+    { "title": "Docker build best practices", "url": "https://docs.docker.com/build/building/best-practices/", "type": "docs", "note": "Official guidance on base images, layers and users." },
+    { "title": "Distroless images", "url": "https://github.com/GoogleContainerTools/distroless", "type": "tool", "note": "Language-focused images without shells or package managers." },
+    { "title": "hadolint", "url": "https://github.com/hadolint/hadolint", "type": "tool", "note": "Dockerfile linter; rules DL3xxx and ShellCheck integration." },
+    { "title": "OCI image annotations (pre-defined keys)", "url": "https://github.com/opencontainers/image-spec/blob/main/annotations.md", "type": "spec", "note": "org.opencontainers.image.* label/annotation keys." }
+  ]
+}

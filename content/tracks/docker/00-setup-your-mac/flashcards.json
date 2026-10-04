@@ -1,0 +1,16 @@
+[
+  { "front": "Why does Docker on macOS need a VM?", "back": "Containers are Linux processes using Linux kernel features (namespaces, cgroups, overlayfs). macOS's kernel lacks them, so the runtime runs the Docker Engine inside a small Linux VM and forwards its API socket to your Mac." },
+  { "front": "What is a Docker context?", "back": "A named endpoint (Unix socket, SSH host or TCP+TLS) the CLI sends API calls to. `docker context ls`, `docker context use <name>`, `docker --context <name> ...`." },
+  { "front": "Endpoint resolution order of the docker CLI", "back": "`-H/--host` flag → `DOCKER_HOST` → `--context` → `DOCKER_CONTEXT` → current context in `~/.docker/config.json`. A stale `DOCKER_HOST` overrides every context." },
+  { "front": "Default context names: Docker Desktop, OrbStack, Colima", "back": "`desktop-linux`, `orbstack`, `colima`. Their sockets: `~/.docker/run/docker.sock`, `~/.orbstack/run/docker.sock`, `~/.colima/default/docker.sock`." },
+  { "front": "Docker Desktop licence in one sentence", "back": "Free for personal use, education, non-commercial open source and businesses with fewer than 250 employees **and** under $10M revenue; larger companies need a paid subscription. The Docker Engine itself is open source." },
+  { "front": "Why are bind mounts slow on a Mac?", "back": "Every file operation crosses the VM boundary via a file-sharing layer (VirtioFS). Named volumes live on the VM's disk and run at native speed — keep `node_modules` in a volume." },
+  { "front": "How do you reach a service on your Mac from inside a container?", "back": "Use `host.docker.internal`. `localhost` inside a container is the container itself." },
+  { "front": "What does `exec format error` usually mean on Apple Silicon?", "back": "The binary is for another architecture (usually amd64) and no emulator handled it. Use a multi-arch image, `--platform linux/amd64` with Rosetta, or rebuild for arm64." },
+  { "front": "How does Rosetta run amd64 containers?", "back": "A Linux build of Rosetta is exposed to the VM and registered with `binfmt_misc`; the kernel passes x86-64 binaries to it for on-the-fly translation to arm64. Faster than QEMU, but not every binary works." },
+  { "front": "Commands to check Docker disk usage and reclaim space", "back": "`docker system df [-v]`, `docker builder prune`, `docker image prune -a`, `docker system prune`. Build cache is often the biggest consumer." },
+  { "front": "Install current Terraform with Homebrew", "back": "`brew tap hashicorp/tap && brew install hashicorp/tap/terraform`. Homebrew core's `terraform` is frozen at 1.5.x because of the BSL licence change." },
+  { "front": "Three quick checks that Docker works", "back": "`docker version` (must show a Server section), `docker context ls` (which endpoint is active), `docker run --rm hello-world`." },
+  { "front": "Where do you change CPU/RAM for Colima?", "back": "`colima stop && colima start --cpu 6 --memory 10 --disk 100`, or `colima start --edit` to edit `~/.colima/default/colima.yaml`. Disk can only grow." },
+  { "front": "zsh completion setup for Homebrew tools", "back": "Add `$(brew --prefix)/share/zsh/site-functions` to `FPATH` **before** `autoload -Uz compinit && compinit`; add `source <(kubectl completion zsh)` and `compdef k=kubectl` for the alias." }
+]

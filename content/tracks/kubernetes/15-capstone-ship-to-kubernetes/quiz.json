@@ -1,0 +1,180 @@
+[
+  {
+    "type": "single",
+    "q": "You run `kubectl apply` for a Deployment. Which component notices the new Deployment and creates a ReplicaSet for it?",
+    "options": [
+      "kubelet",
+      "kube-proxy",
+      "kube-scheduler",
+      "The Deployment controller in kube-controller-manager"
+    ],
+    "answer": 3,
+    "explain": "Controllers in kube-controller-manager watch the API and reconcile: the Deployment controller creates/updates ReplicaSets, the ReplicaSet controller creates Pods, the scheduler assigns them to nodes, and the kubelet starts the containers."
+  },
+  {
+    "type": "single",
+    "q": "shipit-api must reach Postgres from inside the cluster. Which `DATABASE_URL` host is correct when both run in namespace `shipit` and the Postgres Service is named `postgres`?",
+    "options": [
+      "`postgres` (or `postgres.shipit.svc.cluster.local`)",
+      "The node IP and a NodePort",
+      "The Postgres pod IP",
+      "`localhost`"
+    ],
+    "answer": 0,
+    "explain": "Cluster DNS resolves Service names: the short name works within the namespace, the FQDN anywhere. Pod IPs change on restart, `localhost` is the pod itself, and NodePorts are for traffic from outside."
+  },
+  {
+    "type": "single",
+    "q": "Why is Postgres deployed as a StatefulSet with `volumeClaimTemplates` rather than a Deployment with a shared PVC?",
+    "options": [
+      "StatefulSets are faster",
+      "PVCs only work with StatefulSets",
+      "StatefulSets give each replica a stable identity (`postgres-0`) and its own PVC that follows that identity across restarts",
+      "Deployments cannot mount volumes"
+    ],
+    "answer": 2,
+    "explain": "StatefulSet pods have stable names, stable DNS via a headless Service and per-replica PVCs created from the template. A Deployment's replicas are interchangeable and would all try to mount the same ReadWriteOnce volume."
+  },
+  {
+    "type": "single",
+    "q": "In the capstone, the HTTPRoute matches `PathPrefix: /api` with a `URLRewrite` filter `ReplacePrefixMatch: /`. What path does shipit-api receive for `GET /api/items?limit=5`?",
+    "options": [
+      "`/`",
+      "`/items?limit=5`",
+      "`/api/items?limit=5`",
+      "`/api`"
+    ],
+    "answer": 1,
+    "explain": "ReplacePrefixMatch replaces only the matched prefix; the rest of the path and the query string are preserved. That lets the API keep its own routes (`/items`, `/healthz`) while being exposed under `/api`."
+  },
+  {
+    "type": "single",
+    "q": "The Gateway shows `PROGRAMMED: False`, and its HTTPS listener condition says `ResolvedRefs: False ... InvalidCertificateRef`. What is the most likely cause?",
+    "options": [
+      "metrics-server is not installed",
+      "The HTTPRoute hostname is wrong",
+      "The TLS Secret referenced by the listener is missing, in another namespace without a ReferenceGrant, or not a valid `kubernetes.io/tls` Secret",
+      "The backend Service has no endpoints"
+    ],
+    "answer": 2,
+    "explain": "Gateway API reports problems through status conditions on the Gateway and routes. A listener certificate ref that cannot be resolved (missing Secret, wrong type, cross-namespace without ReferenceGrant) makes the listener invalid."
+  },
+  {
+    "type": "single",
+    "q": "You changed `LOG_LEVEL` in the API's ConfigMap via `helm upgrade`, but running pods still log at the old level. Which chart technique makes the pods roll automatically?",
+    "options": [
+      "Setting `imagePullPolicy: Always`",
+      "Using a ClusterIP Service",
+      "Adding a PDB",
+      "A `checksum/config` pod-template annotation computed from the rendered ConfigMap"
+    ],
+    "answer": 3,
+    "explain": "Environment variables from ConfigMaps are read at container start. A checksum annotation changes the pod template whenever the ConfigMap changes, which triggers a rolling update."
+  },
+  {
+    "type": "single",
+    "q": "During the game day, scaling Redis to zero made **every** request return 503, although Postgres was healthy. What is the root cause?",
+    "options": [
+      "The NetworkPolicies block Postgres when Redis is down",
+      "The API's readiness probe checks Redis, so all API pods became NotReady and were removed from endpoints",
+      "Envoy Gateway requires Redis",
+      "The HPA scaled the API to zero"
+    ],
+    "answer": 1,
+    "explain": "Readiness controls whether a pod receives traffic. Treating an optional cache as a hard readiness dependency turns a cache outage into a full outage. Readiness should cover only what the pod truly cannot serve without."
+  },
+  {
+    "type": "multi",
+    "q": "Which settings are required for a pod to pass the `restricted` Pod Security Standard? (select all)",
+    "options": [
+      "`readOnlyRootFilesystem: true`",
+      "`allowPrivilegeEscalation: false`",
+      "`runAsNonRoot: true`",
+      "`seccompProfile.type: RuntimeDefault` (or Localhost)",
+      "`capabilities.drop: [\"ALL\"]`"
+    ],
+    "answer": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "explain": "`restricted` requires non-root, no privilege escalation, dropping all capabilities and a seccomp profile (plus restricted volume types). A read-only root filesystem is a recommended hardening step but not part of the standard."
+  },
+  {
+    "type": "single",
+    "q": "With default-deny NetworkPolicies (ingress and egress) in `shipit`, Envoy (in `envoy-gateway-system`, which has no policies) must reach shipit-api on pod port 3000. Which policies are needed?",
+    "options": [
+      "Only an ingress rule on shipit-api allowing the `envoy-gateway-system` namespace on port 3000",
+      "An egress rule in `envoy-gateway-system` and an ingress rule on shipit-api",
+      "A rule allowing port 80 (the Service port) from Envoy",
+      "Only an egress rule on shipit-api"
+    ],
+    "answer": 0,
+    "explain": "Policies only restrict pods they select. Envoy's namespace has none, so its egress is open. The api pods need an ingress allow from that namespace on the pod port (policies see traffic after Service translation, so 3000, not 80)."
+  },
+  {
+    "type": "single",
+    "q": "Draining the node that runs `postgres-0` leaves the new `postgres-0` Pending. Events mention `volume node affinity conflict`. Why?",
+    "options": [
+      "StatefulSets cannot be rescheduled",
+      "The PDB blocks scheduling",
+      "The image is not on the other nodes",
+      "The PersistentVolume is local to the drained node (local-path), so the pod can only run there; cloud block volumes have the same constraint per Availability Zone"
+    ],
+    "answer": 3,
+    "explain": "PVs carry node affinity when the storage is node- or zone-bound. The scheduler can only place the pod where the volume is reachable. This is why databases need replication or managed services for high availability."
+  },
+  {
+    "type": "single",
+    "q": "A deploy with a non-existent image tag is rolled out with `--wait --timeout 90s --rollback-on-failure`. What do users experience?",
+    "options": [
+      "Half the requests fail for 90 seconds",
+      "A full outage until someone intervenes",
+      "No impact: old pods keep serving while new pods fail to pull, and Helm rolls back after the timeout",
+      "The Deployment is deleted"
+    ],
+    "answer": 2,
+    "explain": "A rolling update only removes old pods as new ones become ready. New pods stuck in ImagePullBackOff never become ready, so old pods keep serving; Helm then restores the previous revision."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about the HPA in the capstone are true? (select all)",
+    "options": [
+      "It needs metrics-server (or another Metrics API provider) for CPU utilisation",
+      "Scale-down is deliberately slower than scale-up by default (stabilisation window)",
+      "Utilisation is measured relative to the container's CPU **request**",
+      "The Deployment manifest should also set `replicas: 2` so Helm and the HPA agree"
+    ],
+    "answer": [
+      0,
+      1,
+      2
+    ],
+    "explain": "CPU utilisation is usage divided by request, read from the Metrics API. Scale-down waits (5 minutes by default) to avoid flapping. Setting `replicas` in the manifest makes each upgrade or GitOps sync fight the HPA, so it is omitted when autoscaling is on."
+  },
+  {
+    "type": "single",
+    "q": "The `shipit-deployer` Role allows managing Secrets in `shipit`. Why, and what is the security implication?",
+    "options": [
+      "Helm stores release state in Secrets, so a Helm-based deployer needs Secret access, which also lets it read application secrets; GitOps avoids giving CI this access",
+      "To rotate TLS certificates automatically",
+      "Kubernetes requires it for any Deployment; no implication",
+      "Secrets access is harmless because values are base64 encoded"
+    ],
+    "answer": 0,
+    "explain": "Helm's release storage is Secrets in the release namespace. Read access to Secrets exposes every secret in that namespace, so a push-based deployer is a high-value credential. With Argo CD pulling from Git, CI needs no cluster credentials."
+  },
+  {
+    "type": "single",
+    "q": "Someone runs `kubectl set env deploy/shipit-api LOG_LEVEL=trace` in production. With Argo CD automated sync and self-heal enabled, what happens, and why is that desirable?",
+    "options": [
+      "Argo CD commits the change to Git",
+      "Argo CD detects drift from Git and reverts it, keeping Git the single source of truth with an auditable history",
+      "The change persists until the next release",
+      "The Application is deleted"
+    ],
+    "answer": 1,
+    "explain": "Self-heal reconciles live state back to Git. Changes must go through Git (reviewed, versioned, revertable), which is the core GitOps guarantee."
+  }
+]

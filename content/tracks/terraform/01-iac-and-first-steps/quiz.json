@@ -1,0 +1,169 @@
+[
+  {
+    "type": "single",
+    "q": "What best describes the difference between a declarative and an imperative infrastructure tool?",
+    "options": [
+      "Imperative tools describe the steps to run; declarative tools describe the desired end state and compute the steps",
+      "Declarative tools are always faster because they run in parallel",
+      "Declarative tools can only manage cloud resources; imperative tools can manage anything",
+      "Imperative tools store state; declarative tools never do"
+    ],
+    "answer": 0,
+    "explain": "With a declarative tool you write *what* should exist and the tool diffs that against reality to work out *how*. This makes runs idempotent. Speed and scope are unrelated, and plenty of declarative tools (Terraform, Pulumi) keep state."
+  },
+  {
+    "type": "single",
+    "q": "How does Terraform core talk to a provider such as `kreuzwerker/docker`?",
+    "options": [
+      "It loads the provider as a Go library compiled into the terraform binary",
+      "It calls the provider's REST API on registry.terraform.io at plan time",
+      "It starts the provider as a separate process and communicates over gRPC (the plugin protocol)",
+      "It shells out to the `docker` CLI"
+    ],
+    "answer": 2,
+    "explain": "Providers are separate executables downloaded by `terraform init` into `.terraform/providers`. Core launches each one as a child process and speaks the gRPC-based plugin protocol to fetch schemas and plan/apply changes. The registry is only used to download them."
+  },
+  {
+    "type": "single",
+    "q": "Your root module declares `version = \"~> 4.6\"` for the Docker provider. Which versions are allowed?",
+    "options": [
+      "Only 4.6.x",
+      "4.6.0 and anything newer, including 5.0",
+      ">= 4.6 and < 5.0",
+      "Exactly 4.6.0"
+    ],
+    "answer": 2,
+    "explain": "`~>` allows only the rightmost specified component to increase. `~> 4.6` means `>= 4.6, < 5.0`. To restrict to patch releases you would write `~> 4.6.0`."
+  },
+  {
+    "type": "multi",
+    "q": "Which files and folders should you commit to Git for a root module? (select all)",
+    "options": [
+      "`main.tf`, `versions.tf` and other `*.tf` files",
+      "`.terraform.lock.hcl`",
+      "`.terraform/`",
+      "`terraform.tfstate`"
+    ],
+    "answer": [
+      0,
+      1
+    ],
+    "explain": "Commit the configuration and the dependency lock file so everyone uses the same provider builds. `.terraform/` is a local cache of downloaded providers and modules. State files can contain secrets and belong in a remote backend, not Git."
+  },
+  {
+    "type": "single",
+    "q": "A plan shows `-/+ resource \"docker_container\" \"api\"` with `image = \"sha256:aa..\" -> (known after apply) # forces replacement`. What will happen on apply?",
+    "options": [
+      "The container is updated in place with the new image",
+      "A new container is created first, then the old one destroyed",
+      "Nothing; `(known after apply)` means Terraform will skip it",
+      "The existing container is destroyed, then a new one is created from the new image"
+    ],
+    "answer": 3,
+    "explain": "`-/+` means destroy then create. The `# forces replacement` marker shows the attribute responsible. `+/-` (create first) only appears with `create_before_destroy`. Expect a short outage and a new container ID."
+  },
+  {
+    "type": "single",
+    "q": "You rename a `docker_network` that two containers reference via `docker_network.shipit.id`. The plan says `Plan: 3 to add, 0 to change, 3 to destroy.` Why?",
+    "options": [
+      "Terraform always recreates everything when any resource changes",
+      "The network name forces replacement, its ID becomes unknown, and both containers' `networks_advanced` (which forces replacement) depend on that ID",
+      "Docker networks cannot be renamed, so Terraform destroys the whole configuration",
+      "It's a bug in the provider; the containers should be updated in place"
+    ],
+    "answer": 1,
+    "explain": "Replacing the network gives it a new ID that is only known after apply. Every resource whose force-new arguments reference that ID must also be replaced. This is why you read the summary line, not just the resource you edited."
+  },
+  {
+    "type": "single",
+    "q": "A teammate runs CI on `linux_amd64` and `terraform init` fails with a checksum mismatch for a provider, but it works on your M3 MacBook. What is the most likely fix?",
+    "options": [
+      "Run `terraform providers lock -platform=darwin_arm64 -platform=linux_amd64` and commit the updated lock file",
+      "Delete `.terraform.lock.hcl` in CI before every run",
+      "Downgrade the provider",
+      "Add `-upgrade` to every CI init"
+    ],
+    "answer": 0,
+    "explain": "By default `init` only records hashes for the platform it ran on. `terraform providers lock` with all needed platforms adds the missing checksums. Deleting the lock file or always upgrading throws away the reproducibility it exists for."
+  },
+  {
+    "type": "multi",
+    "q": "Which commands never change real infrastructure? (select all)",
+    "options": [
+      "`terraform validate`",
+      "`terraform fmt`",
+      "`terraform plan`",
+      "`terraform apply -auto-approve`"
+    ],
+    "answer": [
+      0,
+      1,
+      2
+    ],
+    "explain": "`validate` checks config, `fmt` rewrites your files' formatting, and `plan` only reads (refreshes) and computes a diff. `apply` executes changes; `-auto-approve` just skips the confirmation prompt."
+  },
+  {
+    "type": "single",
+    "q": "You forgot the `required_providers` block and wrote `resource \"docker_container\" \"web\" {}`. What does `terraform init` try to install?",
+    "options": [
+      "`kreuzwerker/docker`, because it's the most popular Docker provider",
+      "Nothing; init fails with a syntax error",
+      "The latest Docker CLI",
+      "`hashicorp/docker`, because the default namespace for an undeclared provider is `hashicorp`"
+    ],
+    "answer": 3,
+    "explain": "Without an explicit source, Terraform assumes `registry.terraform.io/hashicorp/<local name>`. For community providers that is wrong, so always declare `required_providers` with a `source`."
+  },
+  {
+    "type": "single",
+    "q": "When do you need an explicit `depends_on` between two resources?",
+    "options": [
+      "Whenever one resource is created after another",
+      "Never; Terraform figures out every dependency automatically",
+      "When a dependency exists but is not visible through a reference in the configuration",
+      "Only for resources in different providers"
+    ],
+    "answer": 2,
+    "explain": "References (`docker_network.shipit.id`) create edges in the graph automatically. `depends_on` is for hidden dependencies, for example when you hard-code a name string instead of referencing the resource. Prefer references wherever possible."
+  },
+  {
+    "type": "single",
+    "q": "Which tool is the best fit for installing packages and editing config files on a fleet of existing Linux VMs over SSH?",
+    "options": [
+      "Terraform",
+      "AWS CloudFormation",
+      "Ansible",
+      "OpenTofu"
+    ],
+    "answer": 2,
+    "explain": "Ansible is built for configuration management of existing machines. Terraform, OpenTofu and CloudFormation are provisioning tools: they create and track the lifecycle of infrastructure resources through APIs."
+  },
+  {
+    "type": "single",
+    "q": "Someone runs `docker rm -f tf-web` on a container managed by Terraform. What does the next `terraform plan` show?",
+    "options": [
+      "No changes, because the state file still lists the container",
+      "An error that state is corrupted",
+      "That `docker_container.web` will be destroyed",
+      "That `docker_container.web` will be created, because refresh found the object missing"
+    ],
+    "answer": 3,
+    "explain": "Plan refreshes state by asking the provider to read each object. The container is gone, so Terraform drops it from the refreshed state and plans to create it to match the configuration. Manual changes are drift and get reverted."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about OpenTofu are true? (select all)",
+    "options": [
+      "It was forked from Terraform after HashiCorp moved to the Business Source License",
+      "It uses HCL and is largely compatible with Terraform configurations",
+      "It only supports AWS",
+      "Its CLI command is `tofu`"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "OpenTofu forked from the last MPL-licensed Terraform (1.5.x) in 2023 and is a Linux Foundation project. It reads the same HCL, works with the same providers and is invoked as `tofu`. It is not tied to any one cloud."
+  }
+]

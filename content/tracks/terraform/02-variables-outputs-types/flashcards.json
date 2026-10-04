@@ -1,0 +1,16 @@
+[
+  { "front": "Variable precedence (highest to lowest)", "back": "CLI `-var`/`-var-file` (last wins) > `*.auto.tfvars(.json)` (lexical order) > `terraform.tfvars.json` > `terraform.tfvars` > `TF_VAR_<name>` env > `default`." },
+  { "front": "Collection vs structural types", "back": "Collections (`list`, `set`, `map`) hold elements of ONE type. Structural types (`object`, `tuple`) have a fixed shape where each attribute/position can have its own type." },
+  { "front": "`optional(type, default)`", "back": "Marks an object attribute as optional. If omitted (or null), it gets `default`, or `null` when no default is given. Works in nested collections too." },
+  { "front": "How do you validate a regex in a variable?", "back": "`validation { condition = can(regex(\"^[a-z0-9-]+$\", var.name)) error_message = \"...\" }`. `can()` converts success/error into true/false." },
+  { "front": "Can a validation reference other variables?", "back": "Yes, since Terraform 1.9 (also locals and data sources). Earlier versions only allowed the variable itself." },
+  { "front": "What does `sensitive = true` do (and not do)?", "back": "Redacts the value in CLI output and propagates to derived values. It does NOT encrypt it: the value is still in plain text in state." },
+  { "front": "What does `ephemeral = true` on a variable do?", "back": "(1.10+) The value is usable during the run but never written to plan or state. Only allowed where ephemeral values are accepted (provider config, write-only arguments, other ephemeral values)." },
+  { "front": "`nullable = false`", "back": "Passing `null` means 'use the default' (or is an error when there's no default). Prevents null from leaking into module logic." },
+  { "front": "Locals vs variables", "back": "Locals are internal named expressions (`local.x`) callers can't set. Variables are the public inputs (`var.x`). Don't expose a local as a variable without a reason." },
+  { "front": "Reading outputs in scripts", "back": "`terraform output -raw name` for a plain string, `terraform output -json | jq` for structured data. `-raw` prints sensitive outputs too." },
+  { "front": "Resource vs data source", "back": "A resource creates and manages an object's lifecycle. A data source only reads existing information (`data.<type>.<name>.<attr>`) and fails the plan if the object doesn't exist." },
+  { "front": "When is a data source read?", "back": "During plan, unless its arguments depend on values known only after apply; then it's deferred and shown as `<= read` in the plan." },
+  { "front": "`terraform console` tips", "back": "REPL for expressions with your config in scope. `type(expr)` shows a type; `-plan` evaluates against planned values; you can pipe expressions in for scripting." },
+  { "front": "Why can't you index a set with `[0]`?", "back": "Sets are unordered. Convert first: `tolist(var.my_set)[0]`, or iterate with a `for` expression." }
+]

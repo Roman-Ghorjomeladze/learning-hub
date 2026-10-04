@@ -1,0 +1,23 @@
+{
+  "title": "Running Containers",
+  "summary": "`docker run` in depth: the container lifecycle, ports, environment, restart policies, resource limits, logs, exec, inspect templates, signals and graceful shutdown of Node.js apps, exit codes, labels and cleanup.",
+  "level": "beginner",
+  "estimatedMinutes": 150,
+  "objectives": [
+    "Describe the container lifecycle states and move a container through them",
+    "Run containers with the right flags for ports, environment, restart policy and resource limits",
+    "Use logs, exec, cp, stats, events and inspect with Go templates to observe and debug containers",
+    "Explain how docker stop and docker kill deliver signals, why PID 1 matters, and implement graceful shutdown in Node.js",
+    "Interpret exit codes such as 0, 1, 125, 126, 127, 137 and 143",
+    "Label, filter and clean up containers, images, volumes and build cache safely"
+  ],
+  "resources": [
+    { "title": "docker container run reference", "url": "https://docs.docker.com/reference/cli/docker/container/run/", "type": "docs", "note": "Every flag of docker run, with examples." },
+    { "title": "Start containers automatically (restart policies)", "url": "https://docs.docker.com/engine/containers/start-containers-automatically/", "type": "docs", "note": "no, on-failure, always, unless-stopped." },
+    { "title": "Resource constraints", "url": "https://docs.docker.com/engine/containers/resource_constraints/", "type": "docs", "note": "Memory, CPU and GPU limits." },
+    { "title": "Format command and log output", "url": "https://docs.docker.com/engine/cli/formatting/", "type": "docs", "note": "Go templates for --format." },
+    { "title": "Configure logging drivers", "url": "https://docs.docker.com/engine/logging/configure/", "type": "docs", "note": "json-file, local, rotation options." },
+    { "title": "Prune unused Docker objects", "url": "https://docs.docker.com/engine/manage-resources/pruning/", "type": "docs", "note": "What each prune command removes." },
+    { "title": "tini", "url": "https://github.com/krallin/tini", "type": "tool", "note": "The tiny init used by docker run --init." }
+  ]
+}

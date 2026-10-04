@@ -1,0 +1,166 @@
+[
+  {
+    "type": "single",
+    "q": "A Service `api` exists, but `curl api` from another pod fails. `kubectl get endpointslices -l kubernetes.io/service-name=api` shows no addresses. What should you check first?",
+    "options": [
+      "Whether the Service selector matches the pods' labels and whether those pods are Ready",
+      "CoreDNS logs",
+      "kube-proxy mode",
+      "The node's firewall"
+    ],
+    "answer": 0,
+    "explain": "Empty endpoints mean no Ready pod matches the selector. DNS and kube-proxy are working as designed; they have nothing to route to. Compare `kubectl get svc api -o jsonpath='{.spec.selector}'` with `kubectl get pods --show-labels` and check readiness."
+  },
+  {
+    "type": "single",
+    "q": "Endpoints exist and point to the right pods, but connections to the Service are refused. `kubectl exec` into the pod and `curl localhost:3000` works. What are the two most likely causes?",
+    "options": [
+      "Wrong namespace or DNS search domain",
+      "The pod's QoS class is BestEffort",
+      "sessionAffinity is enabled",
+      "`targetPort` does not match the listening port, or the app binds to 127.0.0.1 instead of 0.0.0.0"
+    ],
+    "answer": 3,
+    "explain": "Traffic arrives at podIP:targetPort. If the process listens on a different port, or only on loopback, other pods are refused even though localhost works inside the pod."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about the Kubernetes network model are true? (select all)",
+    "options": [
+      "Every pod gets its own IP address",
+      "Pods on different nodes can reach each other's IPs without NAT",
+      "Containers in the same pod each get a different IP",
+      "The CNI plugin is responsible for pod networking"
+    ],
+    "answer": [
+      0,
+      1,
+      3
+    ],
+    "explain": "The model requires one IP per pod (shared by its containers) and flat pod-to-pod connectivity across nodes. Kubernetes delegates the implementation to a CNI plugin such as kindnet, VPC CNI, Calico or Cilium."
+  },
+  {
+    "type": "single",
+    "q": "A Service has `port: 80`, `targetPort: http`, `nodePort: 30080`, `type: NodePort`. The pod's container declares `ports: [{name: http, containerPort: 3000}]`. Which is correct?",
+    "options": [
+      "In-cluster clients use `svc:3000`; external clients use `node:80`",
+      "In-cluster clients use `svc:80`; external clients use `<node-ip>:30080`; traffic reaches the pod on 3000",
+      "Everyone uses port 30080",
+      "The Service is invalid because targetPort must be a number"
+    ],
+    "answer": 1,
+    "explain": "`port` is the ClusterIP port, `nodePort` is opened on every node, and `targetPort` (here the named port `http` → 3000) is where the pod listens."
+  },
+  {
+    "type": "single",
+    "q": "Which Service type returns the individual pod IPs from DNS instead of a single virtual IP?",
+    "options": [
+      "Headless (`clusterIP: None`)",
+      "ClusterIP",
+      "NodePort",
+      "ExternalName"
+    ],
+    "answer": 0,
+    "explain": "A headless Service has no ClusterIP and no kube-proxy rules; CoreDNS returns an A record per Ready endpoint, and StatefulSet pods get per-pod names."
+  },
+  {
+    "type": "single",
+    "q": "You set `externalTrafficPolicy: Local` on a NodePort Service. Requests to node A time out, while node B works. Why?",
+    "options": [
+      "Node A's kube-proxy crashed",
+      "Local disables NodePorts on control-plane nodes",
+      "Node A runs no pod for that Service; with Local, nodes only forward to local endpoints",
+      "Session affinity is required with Local"
+    ],
+    "answer": 2,
+    "explain": "`Local` preserves the client source IP and avoids an extra hop, but a node without a local endpoint drops the traffic. Cloud load balancers health-check nodes to send traffic only to those with endpoints."
+  },
+  {
+    "type": "single",
+    "q": "From a pod in namespace `shop`, which name resolves to Service `redis` in namespace `cache`?",
+    "options": [
+      "`redis`",
+      "`redis.cache`",
+      "`cache.redis`",
+      "`redis.shop.cache`"
+    ],
+    "answer": 1,
+    "explain": "The search list includes `svc.cluster.local`, so `redis.cache` expands to `redis.cache.svc.cluster.local`. Plain `redis` would look in the caller's namespace first (`redis.shop.svc.cluster.local`)."
+  },
+  {
+    "type": "single",
+    "q": "Your Node.js service calls `api.stripe.com` thousands of times per minute and CoreDNS CPU is high. What is the main cause and a fix?",
+    "options": [
+      "Stripe's DNS is slow; switch providers",
+      "CoreDNS does not cache external names; install Redis",
+      "Pods cannot resolve external names; use hostNetwork",
+      "`ndots:5` makes each lookup try the cluster search domains first (several NXDOMAIN queries); use `api.stripe.com.` or lower `ndots` via `dnsConfig`, and reuse connections"
+    ],
+    "answer": 3,
+    "explain": "Names with fewer than 5 dots are tried with each search domain before as-is, for A and AAAA. A trailing dot or `ndots: \"2\"` cuts that; keep-alive agents reduce lookups; NodeLocal DNSCache helps at scale."
+  },
+  {
+    "type": "multi",
+    "q": "Which statements about kube-proxy are true? (select all)",
+    "options": [
+      "In iptables mode it chooses a backend per connection using random-probability rules",
+      "It proxies every packet through a user-space process",
+      "nftables mode is stable and is the successor to iptables mode",
+      "IPVS mode is deprecated in recent Kubernetes versions"
+    ],
+    "answer": [
+      0,
+      2,
+      3
+    ],
+    "explain": "kube-proxy programs kernel rules; traffic does not flow through kube-proxy itself. nftables mode is stable since v1.33, and IPVS mode was deprecated in v1.35."
+  },
+  {
+    "type": "single",
+    "q": "You scale a gRPC backend from 2 to 10 pods, but CPU stays high on the original 2 and the new ones are idle. Why?",
+    "options": [
+      "New pods are not Ready",
+      "gRPC is UDP-based and not supported by Services",
+      "kube-proxy balances per connection; long-lived HTTP/2 connections stay on the original pods",
+      "The Service needs `sessionAffinity: None`"
+    ],
+    "answer": 2,
+    "explain": "ClusterIP load balancing happens when a connection is established. gRPC multiplexes many requests over one long-lived connection, so it does not rebalance. Use client-side balancing with a headless Service, connection max-age, or an L7 proxy/mesh."
+  },
+  {
+    "type": "single",
+    "q": "On a fresh kind cluster, a `type: LoadBalancer` Service shows `EXTERNAL-IP <pending>` forever. Why?",
+    "options": [
+      "No controller provisions load balancers; run cloud-provider-kind (or MetalLB)",
+      "kind does not support Services",
+      "LoadBalancer requires `externalTrafficPolicy: Local`",
+      "The Service needs an Ingress"
+    ],
+    "answer": 0,
+    "explain": "Kubernetes only allocates the ClusterIP and NodePort; a cloud controller must create the actual LB and write its address. cloud-provider-kind plays that role locally (on macOS run it with sudo and `--enable-lb-port-mapping`)."
+  },
+  {
+    "type": "single",
+    "q": "You create an ExternalName Service `docs` pointing to `kubernetes.io`. `dig docs` shows the CNAME, but `curl https://docs` fails. Why?",
+    "options": [
+      "ExternalName only works for UDP",
+      "CoreDNS blocks external CNAMEs",
+      "ExternalName requires a selector",
+      "ExternalName is a pure DNS alias; the client still sends `docs` as Host/SNI, so the remote server's certificate and virtual hosts do not match"
+    ],
+    "answer": 3,
+    "explain": "No proxying or header rewriting happens. ExternalName works best for protocols that ignore the hostname or servers configured to accept the alias."
+  },
+  {
+    "type": "single",
+    "q": "During graceful termination, what does a pod's EndpointSlice entry look like?",
+    "options": [
+      "It is deleted immediately",
+      "`ready: false`, `serving: true` (if readiness still passes), `terminating: true`",
+      "`ready: true` until SIGKILL",
+      "It moves to a separate terminating Service"
+    ],
+    "answer": 1,
+    "explain": "The endpoint remains with conditions that let kube-proxy stop sending new connections while existing ones drain. `serving` reflects readiness regardless of termination."
+  }
+]

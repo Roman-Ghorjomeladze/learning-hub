@@ -1,0 +1,17 @@
+[
+  { "front": "Root module vs child module", "back": "The root module is the directory you run Terraform in. A child module is any module called from another with a `module` block." },
+  { "front": "How do values flow in and out of a module?", "back": "In: the child's `variable` blocks, set as arguments in the `module` block. Out: the child's `output` blocks, read as `module.<name>.<output>`. Everything else is private." },
+  { "front": "Standard module file layout", "back": "`main.tf`, `variables.tf`, `outputs.tf`, `versions.tf`, `README.md`, plus optional `examples/`, `modules/`, `tests/`, `LICENSE`." },
+  { "front": "Provider versions: module vs root", "back": "Child modules declare minimums (`>= 4.0`). Root modules pin ranges (`~> 4.6`) and commit the lock file." },
+  { "front": "Why no provider blocks in child modules?", "back": "They break `count`/`for_each`/`depends_on` on the module, make removing the module painful (provider config disappears with it), and push auth decisions into the module." },
+  { "front": "Git module source with subdirectory and tag", "back": "`git::https://host/org/repo.git//path/to/module?ref=v1.2.0`. `//` = subdirectory, `ref` = tag/branch/SHA. Pin tags or SHAs, never branches." },
+  { "front": "Registry module source and version", "back": "`source = \"terraform-aws-modules/vpc/aws\"` plus `version = \"~> 6.0\"`. `version` only works for registry (public or private) sources." },
+  { "front": "Does `.terraform.lock.hcl` pin modules?", "back": "No, only providers. Module versions are pinned by `version` (registry) or `?ref=` (Git)." },
+  { "front": "Dependency inversion in modules", "back": "A module receives what it depends on (network ID, subnet IDs, KMS key) as inputs instead of creating or looking it up, so callers decide where it comes from." },
+  { "front": "Passing an aliased provider to a module", "back": "`module \"x\" { source = \"./x\"  providers = { aws = aws.dr } }`. Default configurations are inherited automatically." },
+  { "front": "`configuration_aliases`", "back": "In a child's `required_providers`: `configuration_aliases = [aws.primary, aws.replica]` declares provider names the caller must pass via `providers = { aws.primary = ..., aws.replica = ... }`." },
+  { "front": "Moving existing resources into a module", "back": "`moved { from = docker_container.api  to = module.api.docker_container.this }`. The plan should show a move and 0 changes." },
+  { "front": "for_each on a module: address format", "back": "`module.app[\"site\"].docker_container.this`. Outputs: `{ for k, m in module.app : k => m.url }`." },
+  { "front": "When is a module premature?", "back": "Before you've written the pattern at least twice. Extract on the third use, abstract on domain concepts, and avoid boolean flag soup." },
+  { "front": "terraform-docs command", "back": "`terraform-docs markdown table --output-file README.md --output-mode inject <module dir>`; replaces content between `<!-- BEGIN_TF_DOCS -->` and `<!-- END_TF_DOCS -->`." }
+]

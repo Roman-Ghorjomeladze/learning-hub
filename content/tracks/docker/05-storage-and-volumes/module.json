@@ -1,0 +1,22 @@
+{
+  "title": "Storage & Volumes",
+  "summary": "Where container data actually lives: the writable layer, named volumes, bind mounts and tmpfs, plus permissions, macOS performance, Postgres persistence and volume backup/restore.",
+  "level": "intermediate",
+  "estimatedMinutes": 150,
+  "objectives": [
+    "Explain why data written to a container's writable layer disappears and what copy-on-write costs",
+    "Choose correctly between named volumes, bind mounts and tmpfs mounts for a given job",
+    "Use both `--mount` and `-v` syntax and explain their behavioural differences",
+    "Diagnose and fix UID/GID permission problems on mounted directories",
+    "Persist PostgreSQL data safely and back up / restore a named volume",
+    "Understand bind-mount performance on macOS (VirtioFS, synchronized file shares) and work around it"
+  ],
+  "resources": [
+    { "title": "Storage overview", "url": "https://docs.docker.com/engine/storage/", "type": "docs", "note": "Official overview of volumes, bind mounts and tmpfs." },
+    { "title": "Volumes", "url": "https://docs.docker.com/engine/storage/volumes/", "type": "docs", "note": "Named volumes, drivers, backup and restore examples." },
+    { "title": "Bind mounts", "url": "https://docs.docker.com/engine/storage/bind-mounts/", "type": "docs", "note": "Bind mount options, propagation and read-only mounts." },
+    { "title": "tmpfs mounts", "url": "https://docs.docker.com/engine/storage/tmpfs/", "type": "docs", "note": "In-memory mounts for scratch and secret data." },
+    { "title": "Storage drivers (overlay2)", "url": "https://docs.docker.com/engine/storage/drivers/", "type": "docs", "note": "How the writable layer and copy-on-write work underneath." },
+    { "title": "postgres official image", "url": "https://hub.docker.com/_/postgres", "type": "docs", "note": "PGDATA, init scripts and the volume the image declares." }
+  ]
+}

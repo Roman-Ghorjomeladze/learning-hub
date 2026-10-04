@@ -1,0 +1,24 @@
+{
+  "title": "Images & Dockerfiles",
+  "summary": "How images are named, addressed and distributed (tags, digests, Docker Hub, GHCR, ECR), every Dockerfile instruction that matters, CMD vs ENTRYPOINT, ARG vs ENV, the build context and cache — and a first Dockerfile for shipit-api.",
+  "level": "beginner",
+  "estimatedMinutes": 150,
+  "objectives": [
+    "Break an image reference into registry, repository, tag and digest, and explain why digests are immutable",
+    "Log in, pull, tag and push images to Docker Hub, GHCR, ECR or a local registry",
+    "Write Dockerfiles using FROM, RUN, COPY, ADD, WORKDIR, ENV, ARG, USER, EXPOSE, CMD, ENTRYPOINT and LABEL correctly",
+    "Choose between shell and exec form and between CMD and ENTRYPOINT",
+    "Order instructions for maximum cache reuse in Node.js projects and keep the build context small with .dockerignore",
+    "Inspect images with docker history, docker image inspect and dive, and bootstrap files with docker init"
+  ],
+  "resources": [
+    { "title": "Dockerfile reference", "url": "https://docs.docker.com/reference/dockerfile/", "type": "docs", "note": "The canonical list of instructions and their options." },
+    { "title": "Docker build cache", "url": "https://docs.docker.com/build/cache/", "type": "docs", "note": "How cache keys and invalidation work, and how to optimise." },
+    { "title": "Build context", "url": "https://docs.docker.com/build/concepts/context/", "type": "docs", "note": "What gets sent to the builder and how .dockerignore works." },
+    { "title": "docker init", "url": "https://docs.docker.com/reference/cli/docker/init/", "type": "docs", "note": "Generate a Dockerfile, compose.yaml and .dockerignore for your project." },
+    { "title": "Working with the GitHub Container registry", "url": "https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry", "type": "docs", "note": "Authenticating and pushing to ghcr.io." },
+    { "title": "Amazon ECR: pushing a Docker image", "url": "https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html", "type": "docs", "note": "Login with get-login-password and push." },
+    { "title": "dive", "url": "https://github.com/wagoodman/dive", "type": "tool", "note": "Explore layers and find wasted space." },
+    { "title": "Node.js official image (docker-library)", "url": "https://github.com/nodejs/docker-node", "type": "tool", "note": "Variants, tags and best-practice notes for node images." }
+  ]
+}

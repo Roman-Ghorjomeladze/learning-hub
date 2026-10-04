@@ -1,0 +1,22 @@
+{
+  "title": "Expressions & Meta-Arguments",
+  "summary": "The expression language (templates, conditionals, for expressions, splats, key functions) and the meta-arguments that shape resources: count, for_each, dynamic blocks, depends_on, lifecycle rules, pre/postconditions, check blocks and provider aliases.",
+  "level": "intermediate",
+  "estimatedMinutes": 180,
+  "objectives": [
+    "Write string templates, heredocs, conditionals, for expressions and splat expressions fluently",
+    "Use the core built-in functions (try, can, lookup, merge, coalesce, flatten, setproduct, cidrsubnet, jsonencode, templatefile, file)",
+    "Choose between count and for_each and explain the index-shift problem",
+    "Generate repeated nested blocks with dynamic blocks without overusing them",
+    "Apply lifecycle rules (create_before_destroy, prevent_destroy, ignore_changes, replace_triggered_by) and pre/postconditions",
+    "Add continuous validation with check blocks and target multiple configurations of a provider with aliases"
+  ],
+  "resources": [
+    { "title": "Expressions", "url": "https://developer.hashicorp.com/terraform/language/expressions", "type": "docs", "note": "Types, templates, operators, conditionals, for and splat expressions." },
+    { "title": "Built-in functions", "url": "https://developer.hashicorp.com/terraform/language/functions", "type": "docs", "note": "The full function reference with examples." },
+    { "title": "for_each meta-argument", "url": "https://developer.hashicorp.com/terraform/language/meta-arguments/for_each", "type": "docs", "note": "for_each with maps and sets, and its limitations." },
+    { "title": "lifecycle meta-argument", "url": "https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle", "type": "docs", "note": "create_before_destroy, prevent_destroy, ignore_changes, replace_triggered_by, conditions." },
+    { "title": "Custom conditions and check blocks", "url": "https://developer.hashicorp.com/terraform/language/expressions/custom-conditions", "type": "docs", "note": "Validation, preconditions, postconditions and checks compared." },
+    { "title": "tls provider", "url": "https://registry.terraform.io/providers/hashicorp/tls/latest/docs", "type": "docs", "note": "Generate keys and self-signed certificates locally (used in the labs)." }
+  ]
+}

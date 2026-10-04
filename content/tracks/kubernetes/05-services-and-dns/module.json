@@ -1,0 +1,26 @@
+{
+  "title": "Services, Networking & DNS",
+  "summary": "The Kubernetes network model, Service types and how kube-proxy implements them, EndpointSlices, cluster DNS with CoreDNS, LoadBalancers on kind, and a systematic way to debug connectivity.",
+  "level": "intermediate",
+  "estimatedMinutes": 210,
+  "objectives": [
+    "Explain the Kubernetes network model and the role of the CNI plugin",
+    "Choose between ClusterIP, NodePort, LoadBalancer, ExternalName and headless Services",
+    "Explain how selectors produce EndpointSlices and how readiness affects them",
+    "Describe how kube-proxy implements Services in iptables, IPVS and nftables modes",
+    "Use port, targetPort, nodePort and named ports correctly; configure session affinity and traffic policies",
+    "Explain cluster DNS names, search domains and ndots, and their performance impact",
+    "Provision LoadBalancer Services on kind with cloud-provider-kind",
+    "Debug Service connectivity systematically with netshoot, nslookup, curl and EndpointSlices"
+  ],
+  "resources": [
+    { "title": "Service", "url": "https://kubernetes.io/docs/concepts/services-networking/service/", "type": "docs", "note": "Service types, ports, selectors, traffic policies." },
+    { "title": "Cluster Networking", "url": "https://kubernetes.io/docs/concepts/cluster-administration/networking/", "type": "docs", "note": "The network model and CNI." },
+    { "title": "Virtual IPs and Service Proxies", "url": "https://kubernetes.io/docs/reference/networking/virtual-ips/", "type": "docs", "note": "kube-proxy modes: iptables, IPVS, nftables." },
+    { "title": "EndpointSlices", "url": "https://kubernetes.io/docs/concepts/services-networking/endpoint-slices/", "type": "docs", "note": "How Service backends are tracked, including ready/serving/terminating." },
+    { "title": "DNS for Services and Pods", "url": "https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/", "type": "docs", "note": "Record formats, search domains, dnsPolicy and dnsConfig." },
+    { "title": "Debug Services", "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/", "type": "docs", "note": "The official step-by-step Service debugging guide." },
+    { "title": "cloud-provider-kind", "url": "https://github.com/kubernetes-sigs/cloud-provider-kind", "type": "tool", "note": "LoadBalancer Services (and Gateway API) for kind clusters." },
+    { "title": "netshoot", "url": "https://github.com/nicolaka/netshoot", "type": "tool", "note": "Network troubleshooting container with dig, curl, tcpdump and more." }
+  ]
+}

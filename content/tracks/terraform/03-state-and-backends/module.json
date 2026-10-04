@@ -1,0 +1,24 @@
+{
+  "title": "State & Backends",
+  "summary": "What the state file is and why Terraform needs it, drift and refresh, remote backends (S3 with native lockfile locking, HCP Terraform), state locking and secrets, and every tool for changing state safely: state commands, import/moved/removed blocks, -refresh-only and -replace.",
+  "level": "intermediate",
+  "estimatedMinutes": 180,
+  "objectives": [
+    "Explain what state stores, why Terraform needs it, and read a state file",
+    "Detect drift with refresh and choose between reverting it and accepting it with `-refresh-only`",
+    "Configure an S3 backend with `use_lockfile`, encryption and versioning, and migrate state to it",
+    "Explain state locking and recover from a stale lock with `force-unlock`",
+    "Refactor safely with `moved` blocks and `terraform state mv`, and stop managing objects with `removed` blocks",
+    "Bring existing infrastructure under management with `import` blocks and `-generate-config-out`",
+    "Recover from common state mistakes using backups, bucket versioning and `terraform state push`"
+  ],
+  "resources": [
+    { "title": "State", "url": "https://developer.hashicorp.com/terraform/language/state", "type": "docs", "note": "Purpose of state, locking, sensitive data and workspaces." },
+    { "title": "S3 backend", "url": "https://developer.hashicorp.com/terraform/language/backend/s3", "type": "docs", "note": "All S3 backend options including use_lockfile, encryption and S3-compatible settings." },
+    { "title": "Import existing resources", "url": "https://developer.hashicorp.com/terraform/language/import", "type": "docs", "note": "import blocks and generating configuration." },
+    { "title": "Refactoring with moved blocks", "url": "https://developer.hashicorp.com/terraform/language/modules/develop/refactoring", "type": "docs", "note": "moved blocks for renames, count/for_each changes and module moves." },
+    { "title": "terraform state command", "url": "https://developer.hashicorp.com/terraform/cli/commands/state", "type": "docs", "note": "list, show, mv, rm, pull, push." },
+    { "title": "HCP Terraform", "url": "https://developer.hashicorp.com/terraform/cloud-docs", "type": "docs", "note": "HashiCorp's managed service for remote state and runs." },
+    { "title": "Silo (community MinIO fork)", "url": "https://silo.pgsty.com/", "type": "tool", "note": "S3-compatible server used in the labs as a free stand-in for Amazon S3." }
+  ]
+}

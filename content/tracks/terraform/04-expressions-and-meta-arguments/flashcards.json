@@ -1,0 +1,16 @@
+[
+  { "front": "`${...}` vs `%{...}` in strings", "back": "`${expr}` interpolates a value. `%{ if }`/`%{ for }` are directives. `~` trims adjacent whitespace. Escape literals as `$${` and `%%{`." },
+  { "front": "`[for ...]` vs `{for ...}`", "back": "Square brackets produce a list/tuple; braces produce a map/object (`k => v`). Add `if cond` to filter and `...` after the value to group duplicates into lists." },
+  { "front": "Splat `[*]` limitation", "back": "Works on lists (count resources). For for_each resources (maps) use `values(res)[*].attr` or a `for` expression." },
+  { "front": "`try` vs `can`", "back": "`try(a, b)` returns the first expression that evaluates without error. `can(expr)` returns true/false for whether it evaluates. `can` is mostly for validations." },
+  { "front": "`flatten` pattern for nested loops", "back": "Build a list of lists of objects with nested `for`, `flatten` it, then key it: `{ for o in local.flat : o.key => o }` for `for_each`." },
+  { "front": "`cidrsubnet(\"10.0.0.0/16\", 8, 2)`", "back": "`\"10.0.2.0/24\"`: add 8 bits to the prefix and take network number 2." },
+  { "front": "count vs for_each", "back": "count: instances by index; good for on/off (`var.x ? 1 : 0`). for_each: instances by key from a map or set of strings; stable when items are added/removed. Default to for_each." },
+  { "front": "The index-shift problem", "back": "With count over a list, removing an item shifts later indices, so Terraform replaces or destroys the wrong objects. Fix: for_each with stable keys, migrated with moved blocks." },
+  { "front": "Requirement on for_each keys and count", "back": "Must be known at plan time. Don't derive them from provider-computed attributes (IDs, random values)." },
+  { "front": "`dynamic` block anatomy", "back": "`dynamic \"ports\" { for_each = ...  iterator = p  content { internal = p.value.internal } }`. Generates repeated nested blocks; default iterator name = block label." },
+  { "front": "lifecycle arguments", "back": "`create_before_destroy`, `prevent_destroy`, `ignore_changes`, `replace_triggered_by`, plus `precondition` and `postcondition` blocks. Values must be literals (no variables)." },
+  { "front": "`terraform_data`", "back": "Built-in resource (1.4+) replacing `null_resource`. Holds `input`/`output`, can be replaced via `triggers_replace`, bridges variables into `replace_triggered_by`, hosts provisioners." },
+  { "front": "validation vs precondition vs postcondition vs check", "back": "validation: inputs (error). precondition: assumptions before acting (error). postcondition: guarantees after acting, uses `self` (error). check: ongoing health, top-level (warning)." },
+  { "front": "Provider alias syntax", "back": "`provider \"aws\" { alias = \"use1\"  region = \"us-east-1\" }` then `provider = aws.use1` in a resource. Modules receive them via `providers = { ... }`." }
+]

@@ -1,0 +1,16 @@
+[
+  { "front": "How does Compose know which containers belong to a project?", "back": "Labels such as `com.docker.compose.project` and `com.docker.compose.service`. There's no daemon or state file; the labels are the state." },
+  { "front": "`.env` vs `env_file` vs `environment`", "back": "`.env` feeds **interpolation** of `${...}` in the YAML. `env_file` and `environment` set variables **inside the container** (`environment` wins over `env_file`)." },
+  { "front": "Interpolation forms: `${A:-x}`, `${A:?msg}`, `$$`", "back": "`:-` default if unset or empty; `:?` fail with message if unset or empty; `$$` a literal `$` passed through to the container." },
+  { "front": "Three `depends_on` conditions", "back": "`service_started` (default), `service_healthy` (healthcheck passes), `service_completed_successfully` (one-off job exited 0)." },
+  { "front": "Healthcheck `CMD` vs `CMD-SHELL`", "back": "`CMD` execs the program directly (no shell). `CMD-SHELL` runs via `/bin/sh -c`, allowing pipes, `||` and env var expansion." },
+  { "front": "Which file does Compose merge automatically with compose.yaml?", "back": "`compose.override.yaml`. Other files need `-f a.yaml -f b.yaml` or `COMPOSE_FILE`; later files override earlier ones." },
+  { "front": "How do you remove or replace a value in an override file?", "back": "`!reset` clears it (e.g. `ports: !reset []`); `!override` replaces it entirely instead of merging." },
+  { "front": "Five compose watch actions", "back": "`sync`, `rebuild`, `sync+restart`, `restart`, `sync+exec`. Typical Node setup: sync `./src`, rebuild on `package.json`/lockfile." },
+  { "front": "Where are Compose secrets mounted?", "back": "As files at `/run/secrets/<name>` (override with `target`). Images like postgres read `POSTGRES_PASSWORD_FILE`." },
+  { "front": "What does `docker compose down -v` delete?", "back": "Containers, the project's networks and the named volumes declared in the project (not `external: true` volumes). Data loss for local DBs." },
+  { "front": "How do you run a one-off command with a service's config?", "back": "`docker compose run --rm <service> <cmd>`. It starts dependencies, doesn't publish ports unless `--service-ports`." },
+  { "front": "What does `docker compose up --wait` do?", "back": "Starts the stack detached and blocks until services are running/healthy, failing otherwise. Great for CI integration tests." },
+  { "front": "Why can't you `--scale api=3` with `ports: [\"3000:3000\"]`?", "back": "A fixed host port can be bound only once. Use a range, no host port, or a reverse proxy as the only published service." },
+  { "front": "What are `x-` keys in compose.yaml?", "back": "Extension fields ignored by Compose, used to hold YAML anchors (`&name`) reused elsewhere with aliases (`*name`)." }
+]

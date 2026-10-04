@@ -1,0 +1,9 @@
+{
+  "name": "learning-hub",
+  "private": true,
+  "description": "Personal hands-on learning hub. No dependencies: open index.html in a browser.",
+  "scripts": {
+    "build": "node build/build.mjs",
+    "watch": "node build/build.mjs --watch"
+  }
+}

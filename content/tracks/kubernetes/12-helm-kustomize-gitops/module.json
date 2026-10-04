@@ -1,0 +1,25 @@
+{
+  "title": "Helm, Kustomize & GitOps",
+  "summary": "Package and parameterise manifests with Helm charts and Kustomize overlays, choose between them, and let Argo CD continuously reconcile your cluster from Git.",
+  "level": "intermediate",
+  "estimatedMinutes": 270,
+  "objectives": [
+    "Explain what a Helm chart, release and revision are and how Helm stores release state",
+    "Install, upgrade, roll back and uninstall releases safely with --wait and rollback-on-failure",
+    "Write a production-quality chart for shipit-api with helpers, values and a test hook",
+    "Lint, render, package and push charts to an OCI registry",
+    "Structure Kustomize bases and overlays with patches, generators and image overrides",
+    "Choose between Helm, Kustomize, and both together",
+    "Explain GitOps principles and run Argo CD on kind with automated sync, pruning and self-heal"
+  ],
+  "resources": [
+    { "title": "Helm documentation", "url": "https://helm.sh/docs/", "type": "docs", "note": "Start with Using Helm, then the Chart Template Guide." },
+    { "title": "Chart Template Guide", "url": "https://helm.sh/docs/chart_template_guide/", "type": "docs", "note": "Templates, values, functions, named templates, flow control." },
+    { "title": "Chart Best Practices", "url": "https://helm.sh/docs/chart_best_practices/", "type": "docs", "note": "Naming, labels, values structure, RBAC conventions." },
+    { "title": "Declarative Management of Kubernetes Objects Using Kustomize", "url": "https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/", "type": "docs", "note": "Kustomize as built into kubectl." },
+    { "title": "Kustomize reference", "url": "https://kubectl.docs.kubernetes.io/references/kustomize/", "type": "docs", "note": "Every kustomization field: patches, generators, images, components." },
+    { "title": "Argo CD documentation", "url": "https://argo-cd.readthedocs.io/en/stable/", "type": "docs", "note": "Getting started, Application spec, sync options, app-of-apps." },
+    { "title": "Flux documentation", "url": "https://fluxcd.io/flux/", "type": "docs", "note": "The other CNCF-graduated GitOps engine." },
+    { "title": "OpenGitOps principles", "url": "https://opengitops.dev/", "type": "spec", "note": "The four vendor-neutral GitOps principles." }
+  ]
+}

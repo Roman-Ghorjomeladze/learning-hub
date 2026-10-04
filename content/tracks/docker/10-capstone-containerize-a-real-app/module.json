@@ -1,0 +1,22 @@
+{
+  "title": "Capstone: Containerize a Real App",
+  "summary": "Bring the whole track together: containerize shipit (TypeScript API, nginx-served web frontend, Postgres, Redis) to production standard with multi-stage multi-arch images, non-root hardening, healthchecks, dev and prod-like Compose files, migrations, GHCR publishing, scanning and a README.",
+  "level": "advanced",
+  "estimatedMinutes": 480,
+  "objectives": [
+    "Design the container architecture of a full-stack app: images, networks, volumes, secrets and startup order",
+    "Write production multi-stage Dockerfiles for a TypeScript API and an nginx static frontend, built for arm64 and amd64",
+    "Run the stack in development with hot reload and in a hardened prod-like configuration from the same base",
+    "Run database migrations safely as a one-off job",
+    "Publish images to GitHub Container Registry with SBOM and provenance, scan them, and measure their size",
+    "Document the project so another engineer can run, debug and operate it"
+  ],
+  "resources": [
+    { "title": "Working with the Container registry (GHCR)", "url": "https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry", "type": "docs", "note": "Authenticating, pushing and linking packages to repositories." },
+    { "title": "Multi-platform builds", "url": "https://docs.docker.com/build/building/multi-platform/", "type": "docs", "note": "buildx, emulation, cross-compilation with BUILDPLATFORM/TARGETPLATFORM." },
+    { "title": "GitHub Actions with Docker", "url": "https://docs.docker.com/build/ci/github-actions/", "type": "docs", "note": "Official build-push, metadata, cache and attestation examples." },
+    { "title": "Docker build best practices", "url": "https://docs.docker.com/build/building/best-practices/", "type": "docs", "note": "Checklist to review your Dockerfiles against." },
+    { "title": "nginxinc/nginx-unprivileged", "url": "https://github.com/nginx/docker-nginx-unprivileged", "type": "tool", "note": "Official non-root nginx images listening on 8080." },
+    { "title": "dive", "url": "https://github.com/wagoodman/dive", "type": "tool", "note": "Explore image layers and find wasted space." }
+  ]
+}

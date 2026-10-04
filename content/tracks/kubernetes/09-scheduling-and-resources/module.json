@@ -1,0 +1,24 @@
+{
+  "title": "Scheduling & Resources",
+  "summary": "How Kubernetes decides where pods run and how much of a node they may use: requests and limits, throttling vs OOMKill, QoS, quotas, the scheduler's filter/score loop, affinity, taints, topology spread, priority, disruption budgets, and sizing Node.js containers correctly.",
+  "level": "intermediate",
+  "estimatedMinutes": 220,
+  "objectives": [
+    "Explain requests vs limits and predict CPU throttling vs memory OOMKill",
+    "Identify a pod's QoS class and how it affects eviction",
+    "Enforce defaults and budgets per namespace with LimitRange and ResourceQuota",
+    "Describe how the scheduler filters and scores nodes, and debug Pending pods from scheduler events",
+    "Place pods with nodeSelector, node affinity, pod (anti-)affinity, taints/tolerations and topologySpreadConstraints",
+    "Use PriorityClasses, PodDisruptionBudgets, cordon and drain safely",
+    "Right-size containers with metrics-server and `kubectl top`, including Node.js heap vs container memory"
+  ],
+  "resources": [
+    { "title": "Resource Management for Pods and Containers", "url": "https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/", "type": "docs", "note": "Requests, limits, units and how they are enforced." },
+    { "title": "Pod Quality of Service Classes", "url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-qos/", "type": "docs", "note": "Guaranteed, Burstable, BestEffort." },
+    { "title": "Assigning Pods to Nodes", "url": "https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/", "type": "docs", "note": "nodeSelector, affinity and anti-affinity." },
+    { "title": "Taints and Tolerations", "url": "https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/", "type": "docs", "note": "Effects, built-in taints and tolerationSeconds." },
+    { "title": "Pod Topology Spread Constraints", "url": "https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/", "type": "docs", "note": "maxSkew, whenUnsatisfiable, node inclusion policies." },
+    { "title": "Specifying a Disruption Budget", "url": "https://kubernetes.io/docs/tasks/run-application/configure-pdb/", "type": "docs", "note": "PodDisruptionBudgets and how drains respect them." },
+    { "title": "metrics-server", "url": "https://github.com/kubernetes-sigs/metrics-server", "type": "tool", "note": "Resource metrics for `kubectl top` and the HPA." }
+  ]
+}
